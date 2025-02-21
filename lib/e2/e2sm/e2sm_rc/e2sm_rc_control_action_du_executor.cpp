@@ -102,7 +102,8 @@ e2sm_rc_control_action_2_6_du_executor::e2sm_rc_control_action_2_6_du_executor(
   action_params.insert({3, "RRM Policy"});
   action_params.insert({5, "RRM Policy Member List"});
   action_params.insert({6, "RRM Policy Member"});
-  action_params.insert({7, "PLMN Identity"});
+  action_params.insert({20, "PLMN Identity"});
+  // action_params.insert({7, "PLMN Identity"});
   action_params.insert({8, "S-NSSAI"});
   action_params.insert({9, "SST"});
   action_params.insert({10, "SD"});
@@ -117,6 +118,7 @@ void e2sm_rc_control_action_2_6_du_executor::parse_action_ran_parameter_value(
     uint64_t                             ue_id,
     srs_du::du_mac_sched_control_config& ctrl_cfg)
 {
+  logger.info("amir running parse_action_ran_parameter_value");
   if (action_params[ran_param_id] == "PLMN Identity") {
     srs_du::control_config_params cur_control_params = {};
     cur_control_params.rrm_policy_group.emplace();
@@ -154,6 +156,7 @@ void e2sm_rc_control_action_2_6_du_executor::parse_action_ran_parameter_value(
       }
     }
   } else if (action_params[ran_param_id] == "Min PRB Policy Ratio") {
+    logger.info("amir parse_action_ran_parameter_value: param_id: {}", ran_param_id);
     if (ctrl_cfg.param_list.size()) {
       if (!ctrl_cfg.param_list.back().rrm_policy_group.has_value()) {
         ctrl_cfg.param_list.back().rrm_policy_group.emplace();
@@ -169,7 +172,9 @@ void e2sm_rc_control_action_2_6_du_executor::parse_action_ran_parameter_value(
           ran_param.ran_p_choice_elem_false().ran_param_value.value_int();
       ctrl_cfg.param_list.push_back(cur_control_params);
     }
+    logger.info("amir done parse_action_ran_parameter_value: param_id: {}", ran_param_id);
   } else if (action_params[ran_param_id] == "Max PRB Policy Ratio") {
+    logger.info("amir parse_action_ran_parameter_value: param_id: {}", ran_param_id);
     if (ctrl_cfg.param_list.size()) {
       if (!ctrl_cfg.param_list.back().rrm_policy_group.has_value()) {
         ctrl_cfg.param_list.back().rrm_policy_group.emplace();
@@ -185,6 +190,7 @@ void e2sm_rc_control_action_2_6_du_executor::parse_action_ran_parameter_value(
           ran_param.ran_p_choice_elem_false().ran_param_value.value_int();
       ctrl_cfg.param_list.push_back(cur_control_params);
     }
+    logger.info("amir done parse_action_ran_parameter_value: param_id: {}", ran_param_id);
   } else {
     logger.error("Unknown RAN parameter ID {}", ran_param_id);
     return;
@@ -207,15 +213,24 @@ bool e2sm_rc_control_action_2_6_du_executor::ric_control_action_supported(const 
 async_task<e2sm_ric_control_response>
 e2sm_rc_control_action_2_6_du_executor::execute_ric_control_action(const e2sm_ric_control_request& req)
 {
+  logger.debug("amir running e2sm_rc_control_action_2_6_du_executor::execute_ric_control_action");
   srs_du::du_mac_sched_control_config ctrl_config = convert_to_du_config_request(req);
+  logger.debug("amir done running e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request");
   if (ctrl_config.param_list.empty()) {
+    logger.debug("amir here we are sending failure");
     return return_ctrl_failure(req);
   }
+  logger.debug("amir running e2sm_rc_control_action_2_6_du_executor::execute_ric_control_action middle");
   return launch_async(
       [this, ctrl_config = std::move(ctrl_config)](coro_context<async_task<e2sm_ric_control_response>>& ctx) {
         CORO_BEGIN(ctx);
         srs_du::du_mac_sched_control_config_response ctrl_response;
         CORO_AWAIT_VALUE(ctrl_response, du_param_configurator.configure_ue_mac_scheduler(ctrl_config));
+
+        logger.debug("amir ctrl_response.harq_processes_result: {}", ctrl_response.harq_processes_result);
+        logger.debug("amir ctrl_response.harq_processes_result: {}", ctrl_response.min_prb_alloc_result);
+        logger.debug("amir ctrl_response.harq_processes_result: {}", ctrl_response.max_prb_alloc_result);
+
         e2sm_ric_control_response e2_resp = convert_to_e2sm_response(ctrl_config, ctrl_response);
         CORO_RETURN(e2_resp);
       });
@@ -224,6 +239,7 @@ e2sm_rc_control_action_2_6_du_executor::execute_ric_control_action(const e2sm_ri
 srs_du::du_mac_sched_control_config
 e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request(const e2sm_ric_control_request& e2sm_req_)
 {
+  logger.debug("amir running e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request");
   srs_du::du_mac_sched_control_config ctrl_config = {};
   const e2sm_rc_ctrl_hdr_format1_s&   ctrl_hdr =
       std::get<e2sm_rc_ctrl_hdr_s>(e2sm_req_.request_ctrl_hdr).ric_ctrl_hdr_formats.ctrl_hdr_format1();
@@ -240,6 +256,7 @@ e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request(const e2sm_
       ctrl_config.ue_id = 0;
       break;
   }
+  logger.debug("amir running e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request checkpoint 1");
 
   for (auto& ran_p : ctrl_msg.ran_p_list) {
     if (action_params.find(ran_p.ran_param_id) != action_params.end()) {
@@ -249,6 +266,7 @@ e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request(const e2sm_
       return {};
     }
   }
+  logger.debug("amir running e2sm_rc_control_action_2_6_du_executor::convert_to_du_config_request checkpoint 2");
   return ctrl_config;
 }
 

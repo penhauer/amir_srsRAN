@@ -419,7 +419,7 @@ set(ALL_HEADER_DIRS
   apps
   lib
   include
-  tests/unittests
+#  tests/unittests
 )
 set(ALL_HEADER_FILES "")
 foreach(TMP_DIR ${ALL_HEADER_DIRS})

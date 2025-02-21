@@ -88,7 +88,7 @@ public:
     return cell_handlers[cell_index];
   }
 
-private:
+public:
   class cell_handler final : public mac_cell_rach_handler, public mac_cell_control_information_handler
   {
   public:

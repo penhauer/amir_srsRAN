@@ -74,7 +74,7 @@ public:
 
   const_iterator lower_bound(du_ue_index_t ue_index) const { return ues.lower_bound(ue_index); }
 
-private:
+public:
   srslog::basic_logger& logger;
 
   // Repository of UEs.

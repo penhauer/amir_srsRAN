@@ -158,7 +158,9 @@ du_high_impl::du_high_impl(const du_high_configuration& config_) :
                                       f1ap.get(),
                                       &(get_du_configurator()),
                                       timer_factory{timers, cfg.exec_mapper->du_e2_executor()},
-                                      cfg.exec_mapper->du_e2_executor());
+                                      cfg.exec_mapper->du_e2_executor(),
+                                      du_manager.get(),
+                                      mac.get());
   }
 }
 

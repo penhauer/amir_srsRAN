@@ -612,6 +612,7 @@ du_ue_index_t f1ap_du_impl::get_ue_index(const gnb_du_ue_f1ap_id_t& gnb_du_ue_f1
 
 du_ue_index_t f1ap_du_impl::get_ue_index(const gnb_cu_ue_f1ap_id_t& gnb_cu_ue_f1ap_id)
 {
+  logger.debug("amir running f1ap_du_impl::get_ue_index gnb_cu_ue_f1ap_id_t: {}", gnb_cu_ue_f1ap_id);
   du_ue_index_t     du_ue_index = du_ue_index_t::INVALID_DU_UE_INDEX;
   const f1ap_du_ue* ue          = ues.find(gnb_cu_ue_f1ap_id);
   if (ue) {

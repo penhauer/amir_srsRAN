@@ -32,6 +32,7 @@ ran_slice_instance::ran_slice_instance(ran_slice_id_t                 id_,
   cfg(cfg_),
   pusch_rb_count_per_slot(get_allocator_ring_size_gt_min(SCHEDULER_MAX_K2 + cell_cfg->ntn_cs_koffset))
 {
+  logger.debug("amir running ran_slice_instance::ran_slice_instance sst: {}, sd: {}", cfg_.rrc_member.s_nssai.sst, cfg_.rrc_member.s_nssai.sd.value_or(-1)); 
   std::fill(pusch_rb_count_per_slot.begin(), pusch_rb_count_per_slot.end(), 0);
 }
 
@@ -93,6 +94,8 @@ const slice_ue_repository& ran_slice_instance::get_ues()
 
 void ran_slice_instance::add_logical_channel(const ue& u, lcid_t lcid, lcg_id_t lcg_id)
 {
+  logger.debug("amir running ran_slice_instance::add_logical_channel rnti: {}, ue_index: {}", u.crnti, u.ue_index);
+
   if (lcid == LCID_SRB0) {
     // SRB0 is not handled by slice scheduler.
     return;

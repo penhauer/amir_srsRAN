@@ -22,6 +22,8 @@
 
 #include "e2_indication_procedure.h"
 #include "srsran/asn1/e2ap/e2ap.h"
+#include <typeinfo>
+
 
 #include "srsran/support/async/async_timer.h"
 
@@ -39,7 +41,9 @@ e2_indication_procedure::e2_indication_procedure(e2_message_notifier&    notif_,
 void e2_indication_procedure::operator()(coro_context<eager_async_task<void>>& ctx)
 {
   CORO_BEGIN(ctx);
+  logger.debug("amir running e2_indication_procedure::operator()");
   while (running) {
+    logger.debug("amir running e2_indication_procedure::operator() inside while");
     if (!ev_mng.sub_del_reqs.count(
             {subscription.request_id.ric_requestor_id, subscription.request_id.ric_instance_id})) {
       logger.error("No subscription delete request found for RIC request ID (Requestor ID={}, Instance ID={})",
@@ -47,10 +51,12 @@ void e2_indication_procedure::operator()(coro_context<eager_async_task<void>>& c
                    subscription.request_id.ric_instance_id);
       break;
     }
+    logger.debug("amir running e2_indication_procedure::operator() inside while before subscribe_to");
     transaction_sink.subscribe_to(
         *ev_mng.sub_del_reqs[{subscription.request_id.ric_requestor_id, subscription.request_id.ric_instance_id}].get(),
         (std::chrono::milliseconds)subscription.report_period);
     CORO_AWAIT(transaction_sink);
+    logger.debug("amir running e2_indication_procedure::operator() inside while after subscribe_to");
     if (!transaction_sink.timeout_expired()) {
       logger.info("Subscription deleted");
       running = false;
@@ -70,6 +76,7 @@ void e2_indication_procedure::operator()(coro_context<eager_async_task<void>>& c
       byte_buffer ind_hdr_bytes;
       switch (action.ric_action_type) {
         case ric_action_type_e::ric_action_type_opts::report:
+          logger.debug("amir running e2_indication_procedure::operator() for report action");
           e2_ind.indication->ric_ind_type.value = ric_ind_type_e::ric_ind_type_opts::report;
           // Trigger measurement collection.
           action.report_service->collect_measurements();
@@ -78,6 +85,7 @@ void e2_indication_procedure::operator()(coro_context<eager_async_task<void>>& c
             ind_msg_bytes = action.report_service->get_indication_message();
             ind_hdr_bytes = action.report_service->get_indication_header();
           } else {
+            logger.debug("amir running e2_indication_procedure::operator() indication message was not ready");
             continue;
           }
           break;

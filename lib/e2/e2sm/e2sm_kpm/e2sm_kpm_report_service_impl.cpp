@@ -22,6 +22,7 @@
 
 #include "e2sm_kpm_report_service_impl.h"
 #include "e2sm_kpm_utils.h"
+#include "srsran/asn1/asn1_utils.h"
 #include <algorithm>
 #include <chrono>
 
@@ -72,6 +73,14 @@ e2sm_kpm_report_service_base::e2sm_kpm_report_service_base(e2sm_kpm_action_defin
 bool e2sm_kpm_report_service_base::initialize_ric_ind_msg_format_1(meas_info_list_l&           action_meas_info_list,
                                                                    e2sm_kpm_ind_msg_format1_s& ric_ind_msg)
 {
+  logger.debug("amir running e2sm_kpm_report_service_base::initialize_ric_ind_msg_format_1");
+
+  for (const auto& action_meas_info_item : action_meas_info_list) {
+    auto jw = asn1::json_writer();
+    action_meas_info_item.to_json(jw);
+    logger.debug("amir action_meas_info_item: {}", jw.to_string());
+  }
+
   if (granul_period) {
     ric_ind_msg.granul_period_present = true;
     ric_ind_msg.granul_period         = granul_period;
@@ -143,9 +152,17 @@ void e2sm_kpm_report_service_style1::clear_collect_measurements()
 
 bool e2sm_kpm_report_service_style1::collect_measurements()
 {
+  logger.debug("amir style 1");
   // Set the granularity period.
+
+  // make it work with flexric https://github.com/srsran/srsRAN_Project/discussions/567#discussioncomment-9209950
   ric_ind_message.granul_period_present = true;
   ric_ind_message.granul_period         = granul_period;
+
+  // ric_ind_message.granul_period_present = false;
+  // // ric_ind_message.granul_period         = granul_period;
+
+
 
   // Fill indication msg.
   std::vector<meas_record_item_c> meas_records_items;
@@ -154,14 +171,22 @@ bool e2sm_kpm_report_service_style1::collect_measurements()
   auto& meas_info_list = ric_ind_message.meas_info_list;
   for (auto& meas_info : meas_info_list) {
     // Get measurements.
+    logger.info("amir meas_name: {}", meas_info.meas_type.meas_name().to_string());
     meas_records_items.clear();
     if (meas_provider.get_meas_data(
             meas_info.meas_type, meas_info.label_info_list, {}, cell_global_id, meas_records_items)) {
       // Fill measurements data.
       meas_data_item.meas_record.push_back(meas_records_items[0]);
+      logger.info("amir type of which is: {}", meas_records_items[0].type().to_string());
+      logger.info("amir value of which is: {}", meas_records_items[0].integer());
     }
   }
   ric_ind_message.meas_data.push_back(meas_data_item);
+
+  auto jw = asn1::json_writer();
+  ric_ind_message.to_json(jw);
+  logger.debug("amir ric indication message: {}", jw.to_string());
+
   // As E2 node is always present, each meas_record is valid value and indication is ready.
   is_ind_msg_ready_ = true;
   return true;
@@ -197,6 +222,7 @@ void e2sm_kpm_report_service_style2::clear_collect_measurements()
 
 bool e2sm_kpm_report_service_style2::collect_measurements()
 {
+  logger.debug("amir style 2");
   // Fill indication msg.
   std::vector<meas_record_item_c> meas_records_items;
   meas_data_item_s                meas_data_item;
@@ -274,6 +300,7 @@ void e2sm_kpm_report_service_style3::clear_collect_measurements()
 
 bool e2sm_kpm_report_service_style3::collect_measurements()
 {
+  logger.debug("amir style 3");
   std::vector<asn1::e2sm::ue_id_c> all_matching_ues;
   std::vector<asn1::e2sm::ue_id_c> cur_matching_ues;
   std::vector<meas_record_item_c>  meas_records_items;
@@ -386,6 +413,7 @@ void e2sm_kpm_report_service_style4::clear_collect_measurements()
 
 bool e2sm_kpm_report_service_style4::collect_measurements()
 {
+  logger.info("amir running e2sm_kpm_report_service_style4::collect_measurements");
   std::vector<asn1::e2sm::ue_id_c> all_matching_ues;
   std::vector<asn1::e2sm::ue_id_c> cur_matching_ues;
   std::vector<meas_record_item_c>  meas_records_items;
@@ -475,6 +503,7 @@ e2sm_kpm_report_service_style5::e2sm_kpm_report_service_style5(e2sm_kpm_action_d
   subscription_info(action_def.sub_info),
   ric_ind_message(ric_ind_message_generic.ind_msg_formats.set_ind_msg_format3())
 {
+  logger.debug("amir running e2sm_kpm_report_service_style5::e2sm_kpm_report_service_style5");
   granul_period = subscription_info.granul_period;
   if (subscription_info.cell_global_id_present) {
     cell_global_id = subscription_info.cell_global_id;
@@ -488,6 +517,9 @@ e2sm_kpm_report_service_style5::e2sm_kpm_report_service_style5(e2sm_kpm_action_d
     initialize_ric_ind_msg_format_1(action_meas_info_list, ue_meas_report_item.meas_report);
     ric_ind_message.ue_meas_report_list.push_back(ue_meas_report_item);
     ue_ids.push_back(action_def.matching_ue_id_list[i].ue_id);
+    asn1::json_writer jw;
+    ue_ids.back().gnb_du_ue_id().to_json(jw);
+    logger.debug("amir running e2sm_kpm_report_service_style5::e2sm_kpm_report_service_style5 added ue_id: {}", jw.to_string());
   }
   nof_collected_meas_data = 0;
 }
@@ -511,6 +543,7 @@ void e2sm_kpm_report_service_style5::clear_collect_measurements()
 
 bool e2sm_kpm_report_service_style5::collect_measurements()
 {
+  logger.debug("amir style 5");
   std::vector<meas_record_item_c>  meas_records_items;
   std::vector<asn1::e2sm::ue_id_c> reported_ues;
 

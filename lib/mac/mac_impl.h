@@ -34,10 +34,13 @@
 
 namespace srsran {
 
+
 class mac_impl : public mac_interface
 {
 public:
   explicit mac_impl(const mac_config& mac_cfg);
+
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("MAC-IMPL");
 
   mac_cell_rach_handler& get_rach_handler(du_cell_index_t cell_index) override
   {
@@ -64,7 +67,8 @@ public:
 
   mac_paging_information_handler& get_cell_paging_info_handler() override { return *mac_sched; }
 
-private:
+  mac_scheduler_adapter* get_scheduler_adapter() const { return mac_sched.get(); }
+
   /// Used to allocate new TC-RNTIs and convert from C-RNTI to UE index.
   rnti_manager rnti_table;
 

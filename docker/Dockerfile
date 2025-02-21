@@ -97,3 +97,5 @@ ENV PATH=$PATH:/opt/${LIB}/${LIB_VERSION}/bin/
 RUN /usr/local/etc/install_srsran_dependencies.sh run && \
     /usr/local/etc/install_lib_dependencies.sh run && \
     apt-get autoremove && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y iproute2 tcpdump vim

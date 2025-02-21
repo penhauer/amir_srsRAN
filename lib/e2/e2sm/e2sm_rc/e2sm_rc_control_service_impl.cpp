@@ -136,6 +136,7 @@ bool e2sm_rc_control_service::control_request_supported(const e2sm_ric_control_r
 async_task<e2sm_ric_control_response>
 e2sm_rc_control_service::execute_control_request(const e2sm_ric_control_request& req)
 {
+  logger.info("amir running e2sm_rc_control_service::execute_control_request");
   const e2sm_rc_ctrl_hdr_format1_s& ctrl_hdr =
       std::get<e2sm_rc_ctrl_hdr_s>(req.request_ctrl_hdr).ric_ctrl_hdr_formats.ctrl_hdr_format1();
 
@@ -148,6 +149,8 @@ e2sm_rc_control_service::execute_control_request(const e2sm_ric_control_request&
       CORO_RETURN(ctrl_response);
     });
   }
+
+  logger.info("amir running execute_control_request");
 
   return config_req_executors[ctrl_hdr.ric_ctrl_action_id]->execute_ric_control_action(req);
 }
@@ -244,6 +247,7 @@ bool e2sm_rc_control_service_style_255::control_request_supported(const e2sm_ric
 async_task<e2sm_ric_control_response>
 e2sm_rc_control_service_style_255::execute_control_request(const e2sm_ric_control_request& req)
 {
+  logger.info("amir running e2sm_rc_control_service_style_255::execute_control_request");
   std::vector<async_task<e2sm_ric_control_response>> tasks;
   e2sm_ric_control_response                          aggregated_response;
   aggregated_response.success = false;

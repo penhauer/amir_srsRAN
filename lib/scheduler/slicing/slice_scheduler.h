@@ -58,7 +58,7 @@ public:
   const slice_rrm_policy_config& slice_config(ran_slice_id_t id) const { return slices[id.value()].inst.cfg; }
   scheduler_policy&              get_policy(ran_slice_id_t id) { return *slices[id.value()].policy; }
 
-private:
+public:
   /// RAN slice ID for default slice used to schedule SRB(s) traffic.
   const ran_slice_id_t default_srb_ran_slice_id = ran_slice_id_t{0};
   /// RAN slice ID for default slice used to schedule DRB(s) traffic.

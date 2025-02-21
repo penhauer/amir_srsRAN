@@ -137,6 +137,7 @@ void slice_scheduler::slot_indication(slot_point slot_tx, const cell_resource_al
 
 void slice_scheduler::add_ue(du_ue_index_t ue_idx)
 {
+  logger.debug("amir running slice_scheduler::add_ue");
   ue* u = fetch_ue_to_update(ue_idx);
   if (u == nullptr) {
     return;
@@ -148,6 +149,7 @@ void slice_scheduler::add_ue(du_ue_index_t ue_idx)
 
 void slice_scheduler::reconf_ue(du_ue_index_t ue_idx)
 {
+  logger.debug("amir running slice_scheduler::reconf_ue");
   // Remove UE and previously associated bearers from all slices.
   rem_ue(ue_idx);
 
@@ -199,8 +201,17 @@ void slice_scheduler::config_applied(du_ue_index_t ue_idx)
 
 void slice_scheduler::add_impl(const ue& u)
 {
+  logger.debug("amir running slice_scheduler::add_impl");
   const ue_configuration& ue_cfg = *u.ue_cfg_dedicated();
   for (const logical_channel_config& lc_cfg : ue_cfg.logical_channels()) {
+    logger.debug("amir running slice_scheduler::add_impl lcid: {}, lcgid: {}, du_ue_inex: {}, rnti: {}, sst: {}, sd: {}", 
+      lc_cfg.lcid,
+      lc_cfg.lc_group,
+      u.ue_index,
+      u.crnti,
+      lc_cfg.rrm_policy.s_nssai.sst, 
+      lc_cfg.rrm_policy.s_nssai.sd.value_or(-1)
+    );
     ran_slice_instance& sl_inst = get_slice(lc_cfg);
     sl_inst.add_logical_channel(u, lc_cfg.lcid, lc_cfg.lc_group);
   }
@@ -240,6 +251,15 @@ ue* slice_scheduler::fetch_ue_to_update(du_ue_index_t ue_idx)
 
 ran_slice_instance& slice_scheduler::get_slice(const logical_channel_config& lc_cfg)
 {
+  logger.debug("amir running slice_scheduler::get_slice");
+  for (auto& x : slices) {
+    logger.debug("amir running slice_scheduler::get_slice slice id: --, rrm_policy.sst: {}, rrm_policy.sd: {}", 
+      // x.inst.id,
+      x.inst.cfg.rrc_member.s_nssai.sst,
+      x.inst.cfg.rrc_member.s_nssai.sd.value_or(-1)
+    );
+  }
+
   // Return default SRB slice if LCID belongs to a SRB.
   if (lc_cfg.lcid < LCID_MIN_DRB) {
     return slices[default_srb_ran_slice_id.value()].inst;

@@ -24,6 +24,7 @@
 #include "e2_entity.h"
 #include "e2_impl.h"
 #include "e2ap_asn1_packer.h"
+#include "srsran/du/du_high/du_manager/du_manager.h"
 #include "srsran/e2/e2_cu_factory.h"
 #include "srsran/e2/e2_du_factory.h"
 
@@ -50,6 +51,22 @@ std::unique_ptr<e2_interface> srsran::create_e2_du_entity(e2ap_configuration&   
   std::variant<e2_du_metrics_interface*, e2_cu_metrics_interface*> e2_du_metrics_var = e2_metrics_var;
   auto                                                             e2_ext            = std::make_unique<e2_entity>(
       e2ap_cfg_, e2_client_, e2_du_metrics_var, f1ap_ue_id_translator_, du_configurator_, timers_, e2_exec_);
+  return e2_ext;
+}
+
+std::unique_ptr<e2_interface> srsran::create_e2_du_entity(e2ap_configuration&            e2ap_cfg_,
+                                                          e2_connection_client*          e2_client_,
+                                                          e2_du_metrics_interface*       e2_metrics_var,
+                                                          srs_du::f1ap_ue_id_translator* f1ap_ue_id_translator_,
+                                                          srs_du::du_configurator*       du_configurator_,
+                                                          timer_factory                  timers_,
+                                                          task_executor&                 e2_exec_,
+                                                          srs_du::du_manager_interface*  du_manager,
+                                                          srsran::mac_interface*         mac)
+{
+  std::variant<e2_du_metrics_interface*, e2_cu_metrics_interface*> e2_du_metrics_var = e2_metrics_var;
+  auto                                                             e2_ext            = std::make_unique<e2_entity>(
+      e2ap_cfg_, e2_client_, e2_du_metrics_var, f1ap_ue_id_translator_, du_configurator_, timers_, e2_exec_, du_manager, mac);
   return e2_ext;
 }
 

@@ -67,7 +67,7 @@ public:
   void handle_uci_indication(const uci_indication& uci) override;
   void handle_srs_indication(const srs_indication& srs) override;
 
-private:
+public:
   const scheduler_expert_config expert_params;
 
   srslog::basic_logger& logger;

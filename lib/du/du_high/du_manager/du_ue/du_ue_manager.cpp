@@ -28,6 +28,7 @@
 #include "srsran/gtpu/gtpu_teid_pool_factory.h"
 #include "srsran/support/async/async_no_op_task.h"
 #include "srsran/support/async/execute_on.h"
+#include <cstdint>
 
 using namespace srsran;
 using namespace srs_du;
@@ -47,6 +48,7 @@ du_ue_manager::du_ue_manager(du_manager_params& cfg_, du_ran_resource_manager& c
 
 du_ue_index_t du_ue_manager::find_unused_du_ue_index()
 {
+  logger.debug("amir running du_ue_manager::find_unused_du_ue_index");
   // Search unallocated UE index with no pending events.
   for (size_t i = 0; i < ue_ctrl_loop.size(); ++i) {
     du_ue_index_t ue_index = to_du_ue_index(i);
@@ -218,6 +220,12 @@ du_ue* du_ue_manager::find_f1ap_ue_id(gnb_du_ue_f1ap_id_t f1ap_ue_id)
 expected<du_ue*, std::string> du_ue_manager::add_ue(const du_ue_context&         ue_ctx,
                                                     ue_ran_resource_configurator ue_ran_res)
 {
+  logger.debug(
+    "amir running du_ue_manager::add_ue g2ap_ue_ie: {}, ue_index: {}, rnti: {}",
+    ue_ctx.f1ap_ue_id,
+    ue_ctx.ue_index, 
+    ue_ctx.rnti
+  );
   if (not is_du_ue_index_valid(ue_ctx.ue_index) or
       (not is_crnti(ue_ctx.rnti) and ue_ctx.rnti != rnti_t::INVALID_RNTI)) {
     // UE identifiers are invalid.

@@ -22,6 +22,9 @@
 
 #pragma once
 
+#include "../../../mac/mac_impl.h"
+#include "../../../mac/mac_sched/srsran_scheduler_adapter.h"
+#include "../../../scheduler/scheduler_impl.h"
 #include "e2sm_kpm_metric_defs.h"
 #include "e2sm_kpm_utils.h"
 #include "srsran/adt/optional.h"
@@ -31,14 +34,29 @@
 #include "srsran/e2/e2sm/e2sm.h"
 #include "srsran/e2/e2sm/e2sm_kpm.h"
 #include "srsran/f1ap/du/f1ap_du.h"
+#include "srsran/ran/rnti.h"
 #include <map>
+#include <memory>
 #include <numeric>
 
 namespace srsran {
 
+  struct ue_info {
+    uint16_t ue_index;
+    uint16_t rnti;
+    rnti_t crnti;
+    std::optional<int> sst;
+    std::optional<int> sd;
+  };    
+
 class e2sm_kpm_du_meas_provider_impl : public e2sm_kpm_meas_provider, public e2_du_metrics_notifier
 {
 public:
+
+
+
+  e2sm_kpm_du_meas_provider_impl(srs_du::f1ap_ue_id_translator& f1ap_ue_id_translator_, mac_interface* mac_);
+
   // constructor takes logger as argument
   e2sm_kpm_du_meas_provider_impl(srs_du::f1ap_ue_id_translator& f1ap_ue_id_translator);
 
@@ -77,6 +95,15 @@ public:
                      std::vector<asn1::e2sm::meas_record_item_c>& items) override;
 
 private:
+
+  mac_impl* mac;
+  srsran_scheduler_adapter* scheduler_adapter;
+  scheduler_impl* scheduler_impl_;
+
+
+  std::unique_ptr<ue_info> get_slice_id_of_ue(asn1::e2sm::ue_id_c ue);
+  std::optional<scheduler_ue_metrics> get_relevant_last_ue_metrics(asn1::e2sm::ue_id_c ue);
+
   typedef bool(metric_meas_getter_func_t)(const asn1::e2sm::label_info_list_l          label_info_list,
                                           const std::vector<asn1::e2sm::ue_id_c>&      ues,
                                           const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
@@ -100,6 +127,7 @@ private:
                                       asn1::e2sm::meas_record_item_c::types::options value_type);
 
   // Measurement getter functions.
+  metric_meas_getter_func_t get_pashm;
   metric_meas_getter_func_t get_cqi;
   metric_meas_getter_func_t get_rsrp;
   metric_meas_getter_func_t get_rsrq;

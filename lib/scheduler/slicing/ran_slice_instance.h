@@ -41,6 +41,8 @@ class ran_slice_instance
 public:
   ran_slice_instance(ran_slice_id_t id_, const cell_configuration& cell_cfg_, const slice_rrm_policy_config& cfg_);
 
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("RAN-SLICE-INST");
+
   void slot_indication(slot_point slot_tx);
 
   /// \brief Handle skipped slot indication.

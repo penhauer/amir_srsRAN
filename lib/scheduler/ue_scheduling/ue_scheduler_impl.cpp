@@ -35,6 +35,7 @@ ue_scheduler_impl::ue_scheduler_impl(const scheduler_ue_expert_config& expert_cf
 
 void ue_scheduler_impl::add_cell(const ue_scheduler_cell_params& params)
 {
+  logger.debug("amir running ue_scheduler_impl::add_cell");
   ue_res_grid_view.add_cell(*params.cell_res_alloc);
   cells.emplace(params.cell_index, expert_cfg, params, ue_db, *params.cell_metrics);
   event_mng.add_cell(cell_creation_event{*params.cell_res_alloc,

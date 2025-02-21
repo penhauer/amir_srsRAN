@@ -22,14 +22,43 @@
 
 #include "e2sm_kpm_du_meas_provider_impl.h"
 
+#include "../../../mac/mac_impl.h"
+#include "../../../mac/mac_sched/srsran_scheduler_adapter.h"
+#include "../../../scheduler/scheduler_impl.h"
+#include "../../../scheduler/ue_scheduling/ue_scheduler_impl.h"
+#include <cassert>
+#include <memory>
+#include <optional>
+
 using namespace asn1::e2ap;
 using namespace asn1::e2sm;
 using namespace srsran;
 
+
+
 e2sm_kpm_du_meas_provider_impl::e2sm_kpm_du_meas_provider_impl(srs_du::f1ap_ue_id_translator& f1ap_ue_id_translator_) :
+  e2sm_kpm_du_meas_provider_impl(f1ap_ue_id_translator_, nullptr)
+{
+
+}
+
+
+e2sm_kpm_du_meas_provider_impl::e2sm_kpm_du_meas_provider_impl(srs_du::f1ap_ue_id_translator& f1ap_ue_id_translator_, mac_interface* mac_) :
   logger(srslog::fetch_basic_logger("E2SM-KPM")), f1ap_ue_id_provider(f1ap_ue_id_translator_)
 {
+  auto *z = dynamic_cast<mac_impl*>(mac_);
+  mac = z;
+  auto *zz = dynamic_cast<srsran_scheduler_adapter*>(z->mac_sched.get());
+  scheduler_adapter = zz;
+  auto *zzz = dynamic_cast<scheduler_impl*>(zz->sched_impl.get());
+  scheduler_impl_ = zzz;
+  scheduler_impl_->logger.debug("amir running pashm");
+
   // Array of supported metrics.
+
+  supported_metrics.emplace(
+    "PASHM", e2sm_kpm_supported_metric_t{E2_NODE_LEVEL, UE_LEVEL, true, &e2sm_kpm_du_meas_provider_impl::get_pashm}
+  );
   supported_metrics.emplace(
       "CQI", e2sm_kpm_supported_metric_t{NO_LABEL, ALL_LEVELS, false, &e2sm_kpm_du_meas_provider_impl::get_cqi});
   supported_metrics.emplace(
@@ -250,8 +279,17 @@ bool e2sm_kpm_du_meas_provider_impl::get_ues_matching_test_conditions(
     const asn1::e2sm::matching_ue_cond_per_sub_list_l& matching_ue_cond_list,
     std::vector<asn1::e2sm::ue_id_c>&                  ues)
 {
+
+  //
+  // for (auto ue_cond_list : matching_ue_cond_list) {
+  //   if (ue_cond_list.test_cond_info.test_type.type() == )
+  // }
+
   // TODO: add test condition checking, now return all UEs
   for (const auto& ue : ue_aggr_rlc_metrics) {
+
+
+
     du_ue_index_t       ue_index          = to_du_ue_index(ue.first);
     gnb_cu_ue_f1ap_id_t gnb_cu_ue_f1ap_id = f1ap_ue_id_provider.get_gnb_cu_ue_f1ap_id(ue_index);
     if (gnb_cu_ue_f1ap_id == gnb_cu_ue_f1ap_id_t::invalid) {
@@ -274,6 +312,7 @@ bool e2sm_kpm_du_meas_provider_impl::get_meas_data(const asn1::e2sm::meas_type_c
                                                    const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
                                                    std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_meas_data for {}", meas_type.meas_name().to_string());
   metric_meas_getter_func_ptr metric_meas_getter_func;
   auto                        it = supported_metrics.find(meas_type.meas_name().to_string().c_str());
   if (it == supported_metrics.end()) {
@@ -309,25 +348,119 @@ bool e2sm_kpm_du_meas_provider_impl::handle_no_meas_data_available(
   return false;
 }
 
+std::unique_ptr<ue_info> e2sm_kpm_du_meas_provider_impl::get_slice_id_of_ue(asn1::e2sm::ue_id_c ue) {
+  meas_record_item_c  meas_record_item;
+  gnb_cu_ue_f1ap_id_t gnb_cu_ue_f1ap_id = int_to_gnb_cu_ue_f1ap_id(ue.gnb_du_ue_id().gnb_cu_ue_f1ap_id);
+
+  uint32_t            ue_idx            = f1ap_ue_id_provider.get_ue_index(gnb_cu_ue_f1ap_id);
+  std::unique_ptr<ue_info> ui = std::make_unique<ue_info>();
+  for (auto& cell_scheduler : scheduler_impl_->cells) {
+
+    auto& z = dynamic_cast<ue_scheduler_impl&>(cell_scheduler->ue_sched);
+    for (auto& conditional : z.cells) {
+      du_ue_index_t ind = du_ue_index_t{static_cast<__uint16_t>(ue_idx)};
+      auto* u = conditional.slice_sched.fetch_ue_to_update(ind);
+
+
+      if (u != nullptr) {
+        for (const logical_channel_config& lc_cfg : u->ue_cfg_dedicated()->logical_channels()) {
+          auto sst = lc_cfg.rrm_policy.s_nssai.sst;
+          auto sd = lc_cfg.rrm_policy.s_nssai.sd;
+
+          ui->crnti = u->crnti;
+          ui->ue_index = u->ue_index;
+          logger.debug("amir running slice_scheduler::add_impl lcid: {}, lcgid: {}, du_ue_inex: {}, rnti: {}, sst: {}, sd: {}",
+            lc_cfg.lcid,
+            lc_cfg.lc_group,
+            u->ue_index,
+            u->crnti,
+            lc_cfg.rrm_policy.s_nssai.sst,
+            lc_cfg.rrm_policy.s_nssai.sd.value_or(77)
+          );
+          if (sd.has_value()) {
+            ui->sst = sst;
+            ui->sd = sd;
+          }
+        }
+      } else {
+        assert(false);
+        // logger.error("amir pashm the id {} does not exists as in slice_sche", ind);
+        // for (auto& ue_obj : conditional.slice_sched.ues.ues) {
+        //   logger.error("amir slice_sche has ue {}", ue_obj.get()->ue_index);
+        // }
+      }
+    }
+  }
+
+  return ui;
+}
+
+bool e2sm_kpm_du_meas_provider_impl::get_pashm(const asn1::e2sm::label_info_list_l          label_info_list,
+                                             const std::vector<asn1::e2sm::ue_id_c>&      ues,
+                                             const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
+                                             std::vector<asn1::e2sm::meas_record_item_c>& items)
+{
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_pashm");
+  for (const auto& ue : ues) {
+    meas_record_item_c meas_record_item;
+    auto ui = get_slice_id_of_ue(ue);
+
+    if (ui != nullptr) {
+      assert(ui.sst.has_value());
+      meas_record_item.set_integer() = ui->sst.value();
+    } else {
+      meas_record_item.set_no_value();
+    }
+
+    ui.release();
+
+    items.push_back(meas_record_item);
+  }
+  return true;
+}
+
+
+std::optional<scheduler_ue_metrics> e2sm_kpm_du_meas_provider_impl::get_relevant_last_ue_metrics(asn1::e2sm::ue_id_c ue) {
+  auto ui = get_slice_id_of_ue(ue);
+  meas_record_item_c meas_record_item;
+  for (auto metric : last_ue_metrics) {
+    if (metric.rnti == ui->crnti) {
+      ui.release();
+      return metric;
+    }
+  }
+  ui.release();
+  return std::nullopt;
+}
+
 bool e2sm_kpm_du_meas_provider_impl::get_cqi(const asn1::e2sm::label_info_list_l          label_info_list,
                                              const std::vector<asn1::e2sm::ue_id_c>&      ues,
                                              const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
                                              std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
-  bool meas_collected = false;
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_cqi");
+  
   if (last_ue_metrics.empty()) {
     return handle_no_meas_data_available(ues, items, asn1::e2sm::meas_record_item_c::types::options::integer);
   }
-  scheduler_ue_metrics ue_metrics = last_ue_metrics[0];
 
-  meas_record_item_c meas_record_item;
-  meas_record_item.set_integer() = ue_metrics.cqi_stats.get_nof_observations() > 0
-                                       ? static_cast<uint64_t>(std::roundf(ue_metrics.cqi_stats.get_mean()))
+  for (const auto& ue:ues) {
+    auto metric = get_relevant_last_ue_metrics(ue);
+    meas_record_item_c meas_record_item;
+
+    if (metric.has_value()) {
+      meas_record_item.set_real().value = metric->cqi_stats.get_nof_observations() > 0
+                                       ? metric->cqi_stats.get_mean()
                                        : 0;
-  items.push_back(meas_record_item);
-  meas_collected = true;
+      logger.debug("amir running get_cqi ue: {} cqi: {}", ue.gnb_du_ue_id().gnb_cu_ue_f1ap_id, meas_record_item.real().value);
+    } else {
+      logger.debug("amir running get_cqi ue: {} has no last_ue_metric", ue.gnb_du_ue_id().gnb_cu_ue_f1ap_id);
+      meas_record_item.set_no_value();
+    }
+    items.push_back(meas_record_item);
+  }
 
-  return meas_collected;
+  return true;
 }
 
 bool e2sm_kpm_du_meas_provider_impl::get_rsrp(const asn1::e2sm::label_info_list_l          label_info_list,
@@ -335,18 +468,23 @@ bool e2sm_kpm_du_meas_provider_impl::get_rsrp(const asn1::e2sm::label_info_list_
                                               const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
                                               std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
-  bool meas_collected = false;
   if (last_ue_metrics.empty()) {
     return handle_no_meas_data_available(ues, items, asn1::e2sm::meas_record_item_c::types::options::integer);
   }
-  scheduler_ue_metrics ue_metrics = last_ue_metrics[0];
 
-  meas_record_item_c meas_record_item;
-  meas_record_item.set_integer() = (int)ue_metrics.pusch_snr_db;
-  items.push_back(meas_record_item);
-  meas_collected = true;
+  for (const auto& ue:ues) {
+    auto metric = get_relevant_last_ue_metrics(ue);
+    meas_record_item_c meas_record_item;
 
-  return meas_collected;
+    if (metric.has_value()) {
+      meas_record_item.set_integer() = metric->pusch_snr_db;
+    } else {
+      meas_record_item.set_no_value();
+    }
+    items.push_back(meas_record_item);
+  }
+
+  return true;
 }
 
 bool e2sm_kpm_du_meas_provider_impl::get_rsrq(const asn1::e2sm::label_info_list_l          label_info_list,
@@ -354,18 +492,22 @@ bool e2sm_kpm_du_meas_provider_impl::get_rsrq(const asn1::e2sm::label_info_list_
                                               const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
                                               std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
-  bool meas_collected = false;
   if (last_ue_metrics.empty()) {
     return handle_no_meas_data_available(ues, items, asn1::e2sm::meas_record_item_c::types::options::integer);
   }
-  scheduler_ue_metrics ue_metrics = last_ue_metrics[0];
+  for (const auto& ue:ues) {
+    auto metric = get_relevant_last_ue_metrics(ue);
+    meas_record_item_c meas_record_item;
 
-  meas_record_item_c meas_record_item;
-  meas_record_item.set_integer() = (int)ue_metrics.pusch_snr_db;
-  items.push_back(meas_record_item);
-  meas_collected = true;
+    if (metric.has_value()) {
+      meas_record_item.set_integer() = metric->pusch_snr_db;
+    } else {
+      meas_record_item.set_no_value();
+    }
+    items.push_back(meas_record_item);
+  }
 
-  return meas_collected;
+  return true;
 }
 
 bool e2sm_kpm_du_meas_provider_impl::get_prb_avail_dl(const asn1::e2sm::label_info_list_l          label_info_list,
@@ -643,6 +785,13 @@ bool e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput(const asn1::e2sm
                                                                 const std::optional<asn1::e2sm::cgi_c>  cell_global_id,
                                                                 std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput");
+  for (const auto& label_info_item : label_info_list) {
+    auto jw = asn1::json_writer();
+    label_info_item.meas_label.to_json(jw);
+    logger.debug("amir label for get_drb_dl_mean_throughput is: {}", jw.to_string());
+  }
+
   bool meas_collected = false;
   if (ue_aggr_rlc_metrics.empty()) {
     return handle_no_meas_data_available(ues, items, asn1::e2sm::meas_record_item_c::types::options::integer);
@@ -684,6 +833,7 @@ bool e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput(const asn1::e2sm
     seconds = (float)std::chrono::duration_cast<std::chrono::milliseconds>(ue.second.back().metrics_period).count() /
               (float)1000;
     ue_throughput[ue.first] = bytes_to_kbits(num_pdu_bytes_no_segmentation + num_pdu_bytes_with_segmentation) / seconds;
+    logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput setting ue_throughput[{}]", ue.first);
   }
   if (ues.empty()) {
     meas_record_item_c meas_record_item;
@@ -700,6 +850,7 @@ bool e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput(const asn1::e2sm
     meas_record_item_c  meas_record_item;
     gnb_cu_ue_f1ap_id_t gnb_cu_ue_f1ap_id = int_to_gnb_cu_ue_f1ap_id(ue.gnb_du_ue_id().gnb_cu_ue_f1ap_id);
     uint32_t            ue_idx            = f1ap_ue_id_provider.get_ue_index(gnb_cu_ue_f1ap_id);
+    logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_drb_dl_mean_throughput ue_idx: {}", ue_idx);
     if (ue_throughput.count(ue_idx) == 0) {
       meas_record_item.set_no_value();
       items.push_back(meas_record_item);

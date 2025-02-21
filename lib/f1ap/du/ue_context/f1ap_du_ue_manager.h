@@ -24,6 +24,8 @@
 
 #include "f1ap_du_ue.h"
 #include "srsran/du/du_high/du_high_executor_mapper.h"
+#include "srsran/f1ap/f1ap_ue_id_types.h"
+#include "srsran/ran/rnti.h"
 #include <mutex>
 #include <unordered_map>
 
@@ -41,6 +43,8 @@ public:
     du_handler(du_handler_), ctrl_exec(ctrl_exec_), ue_exec_mapper(ue_exec_mapper_), timers(timers_)
   {
   }
+
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("f1ap_du_ue_manager");  
 
   /// Called when a new connection is established to the CU-CP.
   void update_tx_pdu_notifier(f1ap_message_notifier& f1ap_msg_notifier_) { f1ap_msg_notifier = &f1ap_msg_notifier_; }
@@ -102,6 +106,15 @@ public:
   const f1ap_du_ue* find(gnb_cu_ue_f1ap_id_t ue_cu_f1ap_id) const
   {
     std::lock_guard<std::mutex> lock(map_mutex);
+    logger.debug("amir running f1ap_du_ue_manager::find ue_cu_f1ap_id: {}", ue_cu_f1ap_id);
+
+    for (const auto& ue : ues) {
+      logger.debug(
+        "amir running f1ap_du_ue_manager::find ue_index: {}, gnb_du_ue_f1ap_id: {}, gnb_cu_ue_f1ap_id_t: {}, rnti: {}", 
+        ue.context.ue_index, ue.context.gnb_du_ue_f1ap_id, ue.context.gnb_cu_ue_f1ap_id, ue.context.rnti 
+      );
+    } 
+
     auto                        it = std::find_if(ues.begin(), ues.end(), [ue_cu_f1ap_id](const f1ap_du_ue& e) {
       return e.context.gnb_cu_ue_f1ap_id == ue_cu_f1ap_id;
     });

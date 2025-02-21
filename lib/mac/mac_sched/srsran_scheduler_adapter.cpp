@@ -60,6 +60,7 @@ srsran_scheduler_adapter::srsran_scheduler_adapter(const mac_config& params, rnt
 
 void srsran_scheduler_adapter::add_cell(const mac_cell_creation_request& msg)
 {
+  logger.debug("amir srsran_scheduler_adapter::add_cell");
   // Setup UCI decoder for new cell.
   cell_handlers.emplace(msg.cell_index, msg.cell_index, *this, msg.sched_req);
 

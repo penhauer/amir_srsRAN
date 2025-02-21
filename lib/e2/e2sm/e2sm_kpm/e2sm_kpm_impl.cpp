@@ -23,6 +23,7 @@
 #include "e2sm_kpm_impl.h"
 #include "e2sm_kpm_report_service_impl.h"
 #include "srsran/asn1/asn1_utils.h"
+#include "srsran/e2/e2sm/e2sm_kpm.h"
 
 using namespace asn1::e2ap;
 using namespace asn1::e2sm;
@@ -50,6 +51,7 @@ bool e2sm_kpm_impl::action_supported(const asn1::e2ap::ric_action_to_be_setup_it
   e2sm_kpm_action_definition_s& e2sm_kpm_action_def =
       std::get<e2sm_kpm_action_definition_s>(action_def.action_definition);
 
+  logger.error("action_supported");
   switch (e2sm_kpm_action_def.ric_style_type) {
     case 1:
       return process_action_definition_format1(e2sm_kpm_action_def);
@@ -84,7 +86,11 @@ bool e2sm_kpm_impl::process_action_def_meas_info_list(const meas_info_list_l&   
     for (uint32_t l = 0; l < meas_info_list[i].label_info_list.size(); l++) {
       const meas_label_s& meas_label = meas_info_list[i].label_info_list[l].meas_label;
       if (du_meas_provider.is_metric_supported(meas_type, meas_label, level, cell_scope)) {
+        logger.debug("amir running e2sm_kpm_impl::process_action_def_meas_info_list meas_name: {}", meas_name);
         admitted_value_type_labels[meas_name] = NO_LABEL;
+        if (meas_name == "DRB.UEThpDl" or meas_name == "DRB.UEThpUl") {
+          admitted_value_type_labels[meas_name] = SLICE_ID_LABEL;
+        }
       } else {
         return false;
       }

@@ -21,6 +21,9 @@
  */
 
 #include "e2_entity.h"
+#include "../../mac/mac_impl.h"
+#include "../../mac/mac_sched/srsran_scheduler_adapter.h"
+#include "../../scheduler/scheduler_impl.h"
 #include "../e2sm/e2sm_kpm/e2sm_kpm_asn1_packer.h"
 #include "../e2sm/e2sm_kpm/e2sm_kpm_impl.h"
 #include "../e2sm/e2sm_rc/e2sm_rc_asn1_packer.h"
@@ -32,11 +35,15 @@
 #include "e2sm/e2sm_kpm/e2sm_kpm_cu_meas_provider_impl.h"
 #include "e2sm/e2sm_kpm/e2sm_kpm_du_meas_provider_impl.h"
 #include "srsran/asn1/e2ap/e2ap.h"
+#include "srsran/du/du_high/du_manager/du_manager.h"
 #include "srsran/e2/e2.h"
+#include "srsran/mac/mac.h"
+
 #include <memory>
 
 using namespace srsran;
 using namespace asn1::e2ap;
+
 
 e2_entity::e2_entity(e2ap_configuration&                                              cfg_,
                      e2_connection_client*                                            e2_client_,
@@ -45,12 +52,27 @@ e2_entity::e2_entity(e2ap_configuration&                                        
                      srs_du::du_configurator*                                         du_configurator_,
                      timer_factory                                                    timers_,
                      task_executor&                                                   task_exec_) :
+    e2_entity(cfg_, e2_client_, e2_metrics_, f1ap_ue_id_translator_, du_configurator_, timers_, task_exec_, nullptr, nullptr)
+{
+}
+
+e2_entity::e2_entity(e2ap_configuration&                                              cfg_,
+                     e2_connection_client*                                            e2_client_,
+                     std::variant<e2_du_metrics_interface*, e2_cu_metrics_interface*> e2_metrics_,
+                     srs_du::f1ap_ue_id_translator*                                   f1ap_ue_id_translator_,
+                     srs_du::du_configurator*                                         du_configurator_,
+                     timer_factory                                                    timers_,
+                     task_executor&                                                   task_exec_,
+                     srs_du::du_manager_interface*                                    du_mng,
+                     mac_interface*                                                   mac) :
   logger(srslog::fetch_basic_logger("E2")),
   cfg(cfg_),
   task_exec(task_exec_),
   main_ctrl_loop(128),
   connection_handler(*e2_client_, *this, *this, task_exec_)
 {
+
+
   e2_pdu_notifier   = connection_handler.connect_to_ric();
   e2sm_mngr         = std::make_unique<e2sm_manager>(logger);
   subscription_mngr = std::make_unique<e2_subscription_manager_impl>(*e2_pdu_notifier, *e2sm_mngr);
@@ -59,7 +81,7 @@ e2_entity::e2_entity(e2ap_configuration&                                        
     std::variant<std::unique_ptr<e2sm_kpm_du_meas_provider_impl>, std::unique_ptr<e2sm_kpm_cu_meas_provider_impl>>
         e2sm_kpm_meas_provider;
     if (std::holds_alternative<e2_du_metrics_interface*>(e2_metrics_)) {
-      e2sm_kpm_meas_provider = std::make_unique<e2sm_kpm_du_meas_provider_impl>(*f1ap_ue_id_translator_);
+      e2sm_kpm_meas_provider = std::make_unique<e2sm_kpm_du_meas_provider_impl>(*f1ap_ue_id_translator_, mac);
     } else {
       e2sm_kpm_meas_provider = std::make_unique<e2sm_kpm_cu_meas_provider_impl>();
     }

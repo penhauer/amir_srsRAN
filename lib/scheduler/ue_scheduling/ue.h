@@ -196,7 +196,7 @@ public:
   /// \return Returns the number of bytes reserved in the TB for subPDUs (other than padding).
   unsigned build_dl_fallback_transport_block_info(dl_msg_tb_info& tb_info, unsigned tb_size_bytes);
 
-private:
+public:
   // Expert config parameters used for UE scheduler.
   const scheduler_ue_expert_config& expert_cfg;
   // Cell configuration. This is common to all UEs within the same cell.

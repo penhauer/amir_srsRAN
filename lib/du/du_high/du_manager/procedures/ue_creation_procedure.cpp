@@ -34,6 +34,7 @@ ue_creation_procedure::ue_creation_procedure(const du_ue_creation_request& req_,
                                              du_ue_manager_repository&     ue_mng_,
                                              const du_manager_params&      du_params_,
                                              du_ran_resource_manager&      cell_res_alloc_) :
+  logger(srslog::fetch_basic_logger("AMIR-UE-CREATION")),
   req(req_),
   ue_mng(ue_mng_),
   du_params(du_params_),
@@ -49,6 +50,7 @@ void ue_creation_procedure::operator()(coro_context<async_task<void>>& ctx)
   proc_logger.log_proc_started();
 
   // > Check if UE context was created in the DU manager.
+  logger.debug("amir running ue_creation_procedure::operator");
   ue_ctx_creation_outcome = create_du_ue_context();
   if (not ue_ctx_creation_outcome.has_value()) {
     proc_logger.log_proc_failure("Failed to create DU UE context. Cause: {}", ue_ctx_creation_outcome.error().data());
@@ -104,12 +106,15 @@ void ue_creation_procedure::operator()(coro_context<async_task<void>>& ctx)
 
 expected<du_ue*, std::string> ue_creation_procedure::create_du_ue_context()
 {
+  logger.debug("amir running ue_creation_procedure::create_du_ue_context");
   // Create a DU UE resource manager, which will be responsible for managing bearer and PUCCH resources.
   auto alloc_result = du_res_alloc.create_ue_resource_configurator(req.ue_index, req.pcell_index);
   if (not alloc_result.has_value()) {
     // The UE resource manager could not create a new UE entry.
     return make_unexpected(alloc_result.error());
   }
+
+  logger.debug("amir running ue_creation_procedure::create_du_ue_context checkpoint 2");
 
   // Fetch the DU cell configuration of the primary cell UE is connected to.
   const auto& cell_cfg = du_params.ran.cells[req.pcell_index];
@@ -281,4 +286,5 @@ void ue_creation_procedure::connect_layer_bearers()
                            *srb1.rlc_bearer,
                            du_params.rlc.mac_ue_info_handler);
   }
+
 }
