@@ -26,6 +26,7 @@
 #include "procedure_logger.h"
 #include "srsran/du/du_high/du_manager/du_configurator.h"
 #include "srsran/ran/rrm.h"
+#include "srsran/srslog/logger.h"
 #include "srsran/support/async/manual_event.h"
 
 namespace srsran {
@@ -34,6 +35,9 @@ namespace srs_du {
 class du_ue_ric_configuration_procedure
 {
 public:
+
+  srslog::basic_logger&            logger = srslog::fetch_basic_logger("DU-UE-RIC-CONFIG-PROCEDURE");
+  
   du_ue_ric_configuration_procedure(const du_mac_sched_control_config& request_,
                                     du_ue_manager_repository&          ue_mng_,
                                     const du_manager_params&           du_params_);

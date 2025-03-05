@@ -30,6 +30,7 @@
 #include "procedures/f1ap_du_ue_context_setup_procedure.h"
 #include "procedures/gnb_cu_configuration_update_procedure.h"
 #include "ue_context/f1ap_du_ue_config_update.h"
+#include "srsran/asn1/asn1_utils.h"
 #include "srsran/asn1/f1ap/common.h"
 #include "srsran/asn1/f1ap/f1ap.h"
 #include "srsran/f1ap/f1ap_message.h"
@@ -159,6 +160,11 @@ void f1ap_du_impl::handle_gnb_cu_configuration_update(const asn1::f1ap::gnb_cu_c
 
 void f1ap_du_impl::handle_ue_context_setup_request(const asn1::f1ap::ue_context_setup_request_s& msg)
 {
+  asn1::json_writer jw;
+  msg->to_json(jw);
+  logger.debug("amir running f1ap_du_impl::handle_ue_context_setup_request {}", jw.to_string());
+  
+
   du_ue_index_t du_ue_index = INVALID_DU_UE_INDEX;
 
   if (msg->gnb_du_ue_f1ap_id_present) {
@@ -377,6 +383,9 @@ void f1ap_du_impl::handle_message(const f1ap_message& msg)
 
 void f1ap_du_impl::handle_initiating_message(const asn1::f1ap::init_msg_s& msg)
 {
+  asn1::json_writer jw;
+  msg.to_json(jw);
+  logger.debug("amir running f1ap_du_impl::handle_initiating_message {}", jw.to_string());
   switch (msg.value.type().value) {
     case asn1::f1ap::f1ap_elem_procs_o::init_msg_c::types_opts::gnb_cu_cfg_upd:
       handle_gnb_cu_configuration_update(msg.value.gnb_cu_cfg_upd());

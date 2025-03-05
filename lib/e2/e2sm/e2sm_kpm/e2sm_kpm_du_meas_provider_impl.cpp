@@ -57,7 +57,10 @@ e2sm_kpm_du_meas_provider_impl::e2sm_kpm_du_meas_provider_impl(srs_du::f1ap_ue_i
   // Array of supported metrics.
 
   supported_metrics.emplace(
-    "PASHM", e2sm_kpm_supported_metric_t{E2_NODE_LEVEL, UE_LEVEL, true, &e2sm_kpm_du_meas_provider_impl::get_pashm}
+    "SD", e2sm_kpm_supported_metric_t{E2_NODE_LEVEL, UE_LEVEL, true, &e2sm_kpm_du_meas_provider_impl::get_sd}
+  );
+  supported_metrics.emplace(
+    "RNTI", e2sm_kpm_supported_metric_t{E2_NODE_LEVEL, UE_LEVEL, true, &e2sm_kpm_du_meas_provider_impl::get_rnti}
   );
   supported_metrics.emplace(
       "CQI", e2sm_kpm_supported_metric_t{NO_LABEL, ALL_LEVELS, false, &e2sm_kpm_du_meas_provider_impl::get_cqi});
@@ -383,11 +386,10 @@ std::unique_ptr<ue_info> e2sm_kpm_du_meas_provider_impl::get_slice_id_of_ue(asn1
           }
         }
       } else {
-        assert(false);
-        // logger.error("amir pashm the id {} does not exists as in slice_sche", ind);
-        // for (auto& ue_obj : conditional.slice_sched.ues.ues) {
-        //   logger.error("amir slice_sche has ue {}", ue_obj.get()->ue_index);
-        // }
+        logger.error("amir fuck pashm the id {} does not exists as in slice_sche", ind);
+        for (auto& ue_obj : conditional.slice_sched.ues.ues) {
+          logger.error("amir slice_sche has ue {}", ue_obj.get()->ue_index);
+        }
       }
     }
   }
@@ -395,25 +397,53 @@ std::unique_ptr<ue_info> e2sm_kpm_du_meas_provider_impl::get_slice_id_of_ue(asn1
   return ui;
 }
 
-bool e2sm_kpm_du_meas_provider_impl::get_pashm(const asn1::e2sm::label_info_list_l          label_info_list,
+bool e2sm_kpm_du_meas_provider_impl::get_sd(const asn1::e2sm::label_info_list_l          label_info_list,
                                              const std::vector<asn1::e2sm::ue_id_c>&      ues,
                                              const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
                                              std::vector<asn1::e2sm::meas_record_item_c>& items)
 {
-  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_pashm");
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_sd");
   for (const auto& ue : ues) {
     meas_record_item_c meas_record_item;
     auto ui = get_slice_id_of_ue(ue);
 
     if (ui != nullptr) {
-      assert(ui.sst.has_value());
-      meas_record_item.set_integer() = ui->sst.value();
+      if (ui->sd.has_value()) {
+        meas_record_item.set_integer() = ui->sd.value();
+      } else {
+        meas_record_item.set_no_value();
+        logger.error("amir get_slice_id_of_ue sd is null");
+      }
     } else {
+      logger.error("amir ui is null");
       meas_record_item.set_no_value();
     }
 
     ui.release();
 
+    items.push_back(meas_record_item);
+  }
+  return true;
+}
+
+bool e2sm_kpm_du_meas_provider_impl::get_rnti(const asn1::e2sm::label_info_list_l          label_info_list,
+                                             const std::vector<asn1::e2sm::ue_id_c>&      ues,
+                                             const std::optional<asn1::e2sm::cgi_c>       cell_global_id,
+                                             std::vector<asn1::e2sm::meas_record_item_c>& items)
+{
+  logger.debug("amir running e2sm_kpm_du_meas_provider_impl::get_rnti");
+  for (const auto& ue : ues) {
+    meas_record_item_c meas_record_item;
+    auto ui = get_slice_id_of_ue(ue);
+
+    if (ui != nullptr) {
+      meas_record_item.set_integer() = static_cast<uint64_t>(ui->crnti);
+    } else {
+      logger.error("e2sm_kpm_du_meas_provider_impl::get_rnti ui is null");
+      meas_record_item.set_no_value();
+    }
+
+    ui.release();
     items.push_back(meas_record_item);
   }
   return true;
@@ -479,6 +509,7 @@ bool e2sm_kpm_du_meas_provider_impl::get_rsrp(const asn1::e2sm::label_info_list_
     if (metric.has_value()) {
       meas_record_item.set_integer() = metric->pusch_snr_db;
     } else {
+      logger.error("fuck rsrp");
       meas_record_item.set_no_value();
     }
     items.push_back(meas_record_item);
@@ -502,6 +533,7 @@ bool e2sm_kpm_du_meas_provider_impl::get_rsrq(const asn1::e2sm::label_info_list_
     if (metric.has_value()) {
       meas_record_item.set_integer() = metric->pusch_snr_db;
     } else {
+      logger.error("fuck rsrq");
       meas_record_item.set_no_value();
     }
     items.push_back(meas_record_item);

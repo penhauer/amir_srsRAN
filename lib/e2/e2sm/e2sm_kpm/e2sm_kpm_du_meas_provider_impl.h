@@ -35,6 +35,7 @@
 #include "srsran/e2/e2sm/e2sm_kpm.h"
 #include "srsran/f1ap/du/f1ap_du.h"
 #include "srsran/ran/rnti.h"
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -45,8 +46,8 @@ namespace srsran {
     uint16_t ue_index;
     uint16_t rnti;
     rnti_t crnti;
-    std::optional<int> sst;
-    std::optional<int> sd;
+    uint8_t sst;
+    std::optional<uint32_t> sd;
   };    
 
 class e2sm_kpm_du_meas_provider_impl : public e2sm_kpm_meas_provider, public e2_du_metrics_notifier
@@ -127,7 +128,8 @@ private:
                                       asn1::e2sm::meas_record_item_c::types::options value_type);
 
   // Measurement getter functions.
-  metric_meas_getter_func_t get_pashm;
+  metric_meas_getter_func_t get_sd;
+  metric_meas_getter_func_t get_rnti;
   metric_meas_getter_func_t get_cqi;
   metric_meas_getter_func_t get_rsrp;
   metric_meas_getter_func_t get_rsrq;

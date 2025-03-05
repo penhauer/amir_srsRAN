@@ -48,7 +48,7 @@ du_ue_manager::du_ue_manager(du_manager_params& cfg_, du_ran_resource_manager& c
 
 du_ue_index_t du_ue_manager::find_unused_du_ue_index()
 {
-  logger.debug("amir running du_ue_manager::find_unused_du_ue_index");
+  logger.info("amir running du_ue_manager::find_unused_du_ue_index");
   // Search unallocated UE index with no pending events.
   for (size_t i = 0; i < ue_ctrl_loop.size(); ++i) {
     du_ue_index_t ue_index = to_du_ue_index(i);
@@ -210,6 +210,7 @@ du_ue* du_ue_manager::find_rnti(rnti_t rnti)
 du_ue* du_ue_manager::find_f1ap_ue_id(gnb_du_ue_f1ap_id_t f1ap_ue_id)
 {
   for (auto& ue : ue_db) {
+    logger.info("amir running du_ue_manager::find_f1ap_ue_id f1ap_ue_id: {}, rnti: {}, ue_index: {}", ue.f1ap_ue_id, ue.rnti, ue.ue_index);
     if (ue.f1ap_ue_id == f1ap_ue_id) {
       return &ue;
     }
@@ -220,7 +221,7 @@ du_ue* du_ue_manager::find_f1ap_ue_id(gnb_du_ue_f1ap_id_t f1ap_ue_id)
 expected<du_ue*, std::string> du_ue_manager::add_ue(const du_ue_context&         ue_ctx,
                                                     ue_ran_resource_configurator ue_ran_res)
 {
-  logger.debug(
+  logger.info(
     "amir running du_ue_manager::add_ue g2ap_ue_ie: {}, ue_index: {}, rnti: {}",
     ue_ctx.f1ap_ue_id,
     ue_ctx.ue_index, 

@@ -28,6 +28,7 @@
 #include "srsran/adt/slotted_array.h"
 #include "srsran/du/du_high/du_manager/du_manager.h"
 #include "srsran/du/du_high/du_manager/du_manager_params.h"
+#include "srsran/srslog/logger.h"
 #include "srsran/support/async/fifo_async_task_scheduler.h"
 #include <unordered_map>
 

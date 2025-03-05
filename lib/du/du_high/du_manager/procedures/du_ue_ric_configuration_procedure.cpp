@@ -21,6 +21,7 @@
  */
 
 #include "du_ue_ric_configuration_procedure.h"
+#include "srsran/ran/rnti.h"
 #include "srsran/support/async/execute_on_blocking.h"
 
 using namespace srsran;
@@ -50,9 +51,17 @@ void du_ue_ric_configuration_procedure::operator()(coro_context<async_task<du_ma
 
 manual_event<du_mac_sched_control_config_response>& du_ue_ric_configuration_procedure::dispatch_ue_config_task()
 {
+  logger.debug("amir running du_ue_ric_configuration_procedure::dispatch_ue_config_task for {}", request.ue_id);
+
+
   // Find UE context based on F1AP UE ID.
-  ue = ue_mng.find_f1ap_ue_id(static_cast<gnb_du_ue_f1ap_id_t>(request.ue_id));
+
+  // amir: we changed ue_id here to be rnti not f1ap_ue_id as a workaround of the bug
+  // ue = ue_mng.find_f1ap_ue_id(static_cast<gnb_du_ue_f1ap_id_t>(request.ue_id));
+  ue = ue_mng.find_rnti(static_cast<rnti_t>(request.ue_id));
+
   if (ue == nullptr) {
+    logger.debug("amir running du_ue_ric_configuration_procedure::dispatch_ue_config_task ue not found");
     du_mac_sched_control_config_response fail{false, false, false};
     ue_config_completed.set(fail);
     return ue_config_completed;
