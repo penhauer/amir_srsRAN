@@ -35,7 +35,7 @@ ue_scheduler_impl::ue_scheduler_impl(const scheduler_ue_expert_config& expert_cf
 
 void ue_scheduler_impl::add_cell(const ue_scheduler_cell_params& params)
 {
-  logger.debug("amir running ue_scheduler_impl::add_cell");
+  logger.info("amir running ue_scheduler_impl::add_cell");
   ue_res_grid_view.add_cell(*params.cell_res_alloc);
   cells.emplace(params.cell_index, expert_cfg, params, ue_db, *params.cell_metrics);
   event_mng.add_cell(cell_creation_event{*params.cell_res_alloc,
@@ -51,6 +51,8 @@ void ue_scheduler_impl::add_cell(const ue_scheduler_cell_params& params)
 
 void ue_scheduler_impl::run_sched_strategy(slot_point slot_tx, du_cell_index_t cell_index)
 {
+  slot_counter += 1;
+
   // Update all UEs state.
   ue_db.slot_indication(slot_tx);
 
@@ -72,6 +74,12 @@ void ue_scheduler_impl::run_sched_strategy(slot_point slot_tx, du_cell_index_t c
   if (expert_cfg.enable_csi_rs_pdsch_multiplexing or (*cells[cell_index].cell_res_alloc)[0].result.dl.csi_rs.empty()) {
     auto dl_slice_candidate = cells[cell_index].slice_sched.get_next_dl_candidate();
     while (dl_slice_candidate.has_value()) {
+
+      if (slot_counter % 100 == 0) {
+        logger.debug("amir running ue_scheduler_impl::run_sched_strategy slot_counter: {}, dl_slice_candidate: {}, max_prb: {}",
+                     slot_counter, dl_slice_candidate->id().value(), dl_slice_candidate->cfg().max_prb);
+      }
+
       auto&                           policy = cells[cell_index].slice_sched.get_policy(dl_slice_candidate->id());
       dl_slice_ue_cell_grid_allocator slice_pdsch_alloc{ue_alloc, *dl_slice_candidate};
       policy.dl_sched(

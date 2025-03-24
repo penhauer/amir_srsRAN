@@ -32,6 +32,7 @@ namespace srsran {
 /// Inter-slice Scheduler.
 class slice_scheduler
 {
+  int called = 0;
   using priority_type                      = uint32_t;
   using slot_count_type                    = uint32_t;
   static constexpr priority_type skip_prio = 0;

@@ -43,6 +43,7 @@ namespace srsran {
 /// The data_scheduler object will be common to all cells and slots.
 class ue_scheduler_impl final : public ue_scheduler
 {
+  uint32_t slot_counter = 0;
 public:
   explicit ue_scheduler_impl(const scheduler_ue_expert_config& expert_cfg_);
 

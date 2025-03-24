@@ -23,6 +23,7 @@
 #include "slice_scheduler.h"
 #include "../policy/scheduler_policy_factory.h"
 #include "../support/pusch/pusch_td_resource_indices.h"
+#include "srsran/asn1/asn1_utils.h"
 #include "srsran/srslog/srslog.h"
 
 using namespace srsran;
@@ -33,12 +34,14 @@ slice_scheduler::slice_scheduler(const cell_configuration& cell_cfg_, ue_reposit
   current_slot(to_numerology_value(cell_cfg.dl_cfg_common.init_dl_bwp.generic_params.scs), 0),
   ues(ues_)
 {
+  logger.info("amir running slice_scheduler::slice_scheduler");
   // Create a number of slices equal to the number of configured RRM Policy members + 1 (default SRB slice) + 1 (default
   // DRB slice).
   slices.reserve(cell_cfg.rrm_policy_members.size() + 2);
 
   // NOTE: We assume nof. CRBs in a cell for both DL and UL are same.
   const unsigned cell_max_rbs = cell_cfg.dl_cfg_common.init_dl_bwp.generic_params.crbs.length();
+  logger.info("amir running slice_scheduler::slice_scheduler cell_max_rbs: {}", cell_max_rbs);
 
   // Create RAN slice instances.
   // Default SRB slice.
@@ -79,6 +82,14 @@ slice_scheduler::slice_scheduler(const cell_configuration& cell_cfg_, ue_reposit
 
 void slice_scheduler::slot_indication(slot_point slot_tx, const cell_resource_allocator& res_grid)
 {
+  called++;
+  if (called % 100 == 0) {
+    logger.debug("amir running slice_scheduler::slot_indication for cell index: {} called: {}", cell_cfg.cell_index, called);
+    logger.debug("slot_tx: index: {}, sfn: {} numerology: {}", slot_tx.slot_index(), slot_tx.sfn(), slot_tx.numerology());
+  }
+  if (called % 10000 == 0) {
+    called = 0;
+  }
   // If there are skipped slots, handle them.
   if ((current_slot + 1) != slot_tx) {
     for (auto& slice : slices) {
@@ -102,6 +113,14 @@ void slice_scheduler::slot_indication(slot_point slot_tx, const cell_resource_al
     unsigned max_rbs = slice.inst.pdsch_rb_count <= slice.inst.cfg.min_prb and slice.inst.cfg.min_prb > 0
                            ? slice.inst.cfg.min_prb
                            : slice.inst.cfg.max_prb;
+
+    if (called % 100 == 0) {
+      logger.debug("amir running slice_scheduler::slot_indication slice_id: {} max_rbs: {}, pdsch_rb_count: {}, sd: {}", 
+        slice.inst.id.value(),
+         max_rbs, slice.inst.pdsch_rb_count, slice.inst.cfg.rrc_member.s_nssai.sd.value_or(-1)
+      );
+    }
+
     dl_prio_queue.push(slice_candidate_context{slice.inst.id,
                                                slice.get_prio(true, slot_count, slot_tx, slot_tx, slices.size(), false),
                                                {slice.inst.pdsch_rb_count, max_rbs},
