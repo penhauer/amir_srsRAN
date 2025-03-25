@@ -28,3 +28,5 @@ set(SOURCES
 
 add_library(du_manager_converters STATIC ${SOURCES})
 target_link_libraries(du_manager_converters rrc_nr_asn1 srsran_support srsran_ran srsran_sched)
+
+add_to_exported_libs(du_manager_converters)

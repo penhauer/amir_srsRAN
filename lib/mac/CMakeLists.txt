@@ -51,3 +51,6 @@ target_link_libraries(srsran_mac
         srsran_pcap
         rrc_nr_asn1
         srsran_instrumentation)
+
+add_to_exported_libs(mac_configuration_helpers)
+add_to_exported_libs(srsran_mac)

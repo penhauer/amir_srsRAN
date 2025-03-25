@@ -66,3 +66,5 @@ add_library(srsran_sched STATIC ${SOURCES}
         $<TARGET_OBJECTS:common_sched>
         $<TARGET_OBJECTS:ue_sched>)
 target_link_libraries(srsran_sched srsran_ran sched_config scheduler_logger)
+
+add_to_exported_libs(srsran_sched)

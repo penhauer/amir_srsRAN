@@ -27,3 +27,5 @@ add_library(du_resource_manager
         srs_resource_generator.cpp
         ue_capability_manager.cpp)
 target_link_libraries(du_resource_manager du_manager_converters srsran_du_config_validators mac_configuration_helpers)
+
+add_to_exported_libs(du_resource_manager)

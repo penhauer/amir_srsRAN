@@ -30,3 +30,5 @@ target_link_libraries(sched_config srsran_ran du_resource_manager)
 
 add_library(sched_config_manager OBJECT cell_configuration.cpp ue_configuration.cpp sched_config_manager.cpp)
 target_link_libraries(sched_config_manager srsran_ran)
+
+add_to_exported_libs(sched_config)

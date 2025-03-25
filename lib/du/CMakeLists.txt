@@ -39,3 +39,5 @@ if (DPDK_FOUND)
            hal_hwacc_pdsch
            hal_bbdev_factory)
 endif (DPDK_FOUND)
+
+add_to_exported_libs(srsran_du_config_validators) 

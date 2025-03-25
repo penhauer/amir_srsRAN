@@ -28,3 +28,5 @@ set(SOURCES
 )
 
 add_library(srsran_pcap STATIC ${SOURCES})
+
+add_to_exported_libs(srsran_pcap)
