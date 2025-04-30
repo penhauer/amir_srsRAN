@@ -30,6 +30,7 @@
 #include "srsran/scheduler/config/scheduler_expert_config.h"
 #include "srsran/scheduler/config/serving_cell_config.h"
 #include "srsran/scheduler/scheduler_slot_handler.h"
+#include "srsran/srslog/srslog.h"
 
 namespace srsran {
 
@@ -37,6 +38,7 @@ namespace srsran {
 /// via CSI (e.g. CQI) or via gNB PHY measurements (e.g. UL SINR).
 class ue_channel_state_manager
 {
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("ue_chnl_state_mgr");
 public:
   ue_channel_state_manager(const scheduler_ue_expert_config& expert_cfg_, unsigned nof_dl_ports_);
 
@@ -47,7 +49,10 @@ public:
   /// \brief Get PUSCH SNR in dB.
   float get_pusch_snr() const { return pusch_snr_db; }
 
-  csi_report_wideband_cqi_type get_wideband_cqi() const { return wideband_cqi; }
+  csi_report_wideband_cqi_type get_wideband_cqi() const { 
+    logger.debug("amir CSI report: wideband_cqi = {}", wideband_cqi);
+    return wideband_cqi; 
+  }
 
   /// \brief Gets the number of recommended layers to be used in DL based on reported RI.
   unsigned get_nof_dl_layers() const { return recommended_dl_layers; }

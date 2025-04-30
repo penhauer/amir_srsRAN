@@ -96,12 +96,23 @@ void cell_metrics_handler::handle_crc_indication(const ul_crc_pdu_indication& cr
 
 void cell_metrics_handler::handle_pucch_sinr(ue_metric_context& u, float sinr)
 {
+  logger.debug("Received PUCCH SINR report for UE {}, SINR: {}", u.ue_index, sinr);
   u.data.nof_pucch_snr_reports++;
   u.data.sum_pucch_snrs += sinr;
 }
 
 void cell_metrics_handler::handle_csi_report(ue_metric_context& u, const csi_report_data& csi)
 {
+  logger.debug("Received CSI report for UE {}", u.ue_index);
+  logger.debug("CSI Report Details: first_tb_wideband_cqi={}, ri={}",
+         csi.first_tb_wideband_cqi.has_value() ? csi.first_tb_wideband_cqi->to_uint() : -1,
+         csi.ri.has_value() ? csi.ri->to_uint() : -1);
+        //  csi.pmi.has_value() ? csi.pmi->to_string() : "N/A",
+        //  csi.cqi_table.has_value() ? csi.cqi_table->to_string() : "N/A",
+        //  csi.wideband_sinr.has_value() ? csi.wideband_sinr.value() : -std::numeric_limits<float>::infinity());
+  
+
+
   // Add new CQI and RI observations if they are available in the CSI report.
   if (csi.first_tb_wideband_cqi.has_value()) {
     u.data.cqi.update(csi.first_tb_wideband_cqi->to_uint());

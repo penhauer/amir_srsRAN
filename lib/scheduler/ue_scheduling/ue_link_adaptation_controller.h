@@ -25,6 +25,7 @@
 #include "../config/cell_configuration.h"
 #include "../support/outer_loop_link_adaptation.h"
 #include "ue_channel_state_manager.h"
+#include "srsran/srslog/srslog.h"
 
 namespace srsran {
 
@@ -32,6 +33,8 @@ namespace srsran {
 /// channel BLER.
 class ue_link_adaptation_controller
 {
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("ue_link_adp_ctrlr");
+
 public:
   ue_link_adaptation_controller(const cell_configuration& cell_cfg_, const ue_channel_state_manager& ue_channel_state);
 

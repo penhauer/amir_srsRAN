@@ -23,6 +23,7 @@
 #include "scheduler_time_rr.h"
 #include "../support/pdsch/pdsch_resource_allocation.h"
 #include "../support/pusch/pusch_td_resource_indices.h"
+#include "srsran/instrumentation/traces/du_traces.h"
 #include "srsran/srslog/srslog.h"
 
 using namespace srsran;
@@ -274,7 +275,8 @@ static alloc_result alloc_dl_retxs(const slice_ue_repository&   ue_db,
 }
 
 /// Allocate UE PDSCH grant for new transmissions.
-static alloc_result alloc_dl_ue_newtx(const slice_ue&              u,
+static alloc_result alloc_dl_ue_newtx(int num_called,
+                                      const slice_ue&              u,
                                       const ue_resource_grid_view& res_grid,
                                       ue_pdsch_allocator&          pdsch_alloc,
                                       srslog::basic_logger&        logger,
@@ -298,6 +300,15 @@ static alloc_result alloc_dl_ue_newtx(const slice_ue&              u,
     }
 
     if (can_allocate_dl_newtx(u, to_ue_cell_index(i), logger)) {
+      auto pending_bytes = u.pending_dl_newtx_bytes();
+      if (pending_bytes > 0) {
+        logger.info("amir running alloc_dl_ue_newtx: num_called: {}, ue: {}, cell_index: {}, pending_dl_newtx_bytes: {}",
+                    num_called,
+                    u.crnti(),
+                    ue_cc.cell_index,
+                    u.pending_dl_newtx_bytes());
+      }
+
       ue_pdsch_grant grant{
           &u, ue_cc.cell_index, INVALID_HARQ_ID, u.pending_dl_newtx_bytes(), dl_new_tx_max_nof_rbs_per_ue_per_slot};
       const alloc_result result = pdsch_alloc.allocate_dl_grant(grant);
@@ -395,6 +406,7 @@ void scheduler_time_rr::dl_sched(ue_pdsch_allocator&          pdsch_alloc,
                                  dl_ran_slice_candidate&      slice_candidate,
                                  dl_harq_pending_retx_list    harq_pending_retx_list)
 {
+  num_called++;
   const slice_ue_repository& ues      = slice_candidate.get_slice_ues();
   const unsigned             max_rbs  = slice_candidate.remaining_rbs();
   const ran_slice_id_t       slice_id = slice_candidate.id();
@@ -416,7 +428,7 @@ void scheduler_time_rr::dl_sched(ue_pdsch_allocator&          pdsch_alloc,
     // Then, schedule UEs with new transmissions.
     auto drb_newtx_ue_function =
         [this, &res_grid, &pdsch_alloc, dl_new_tx_max_nof_rbs_per_ue_per_slot](const slice_ue& u) {
-          return alloc_dl_ue_newtx(u, res_grid, pdsch_alloc, logger, dl_new_tx_max_nof_rbs_per_ue_per_slot);
+          return alloc_dl_ue_newtx(num_called, u, res_grid, pdsch_alloc, logger, dl_new_tx_max_nof_rbs_per_ue_per_slot);
         };
     auto result      = round_robin_apply(ues, next_dl_ue_index, drb_newtx_ue_function);
     next_dl_ue_index = result.first;

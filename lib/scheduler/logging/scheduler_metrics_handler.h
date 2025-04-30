@@ -28,6 +28,7 @@
 #include "srsran/scheduler/scheduler_metrics.h"
 #include "srsran/scheduler/scheduler_slot_handler.h"
 #include <unordered_map>
+#include "srsran/srslog/srslog.h"
 
 namespace srsran {
 
@@ -37,6 +38,10 @@ struct rach_indication_message;
 ///\brief Handler of scheduler slot metrics for a given cell.
 class cell_metrics_handler final : public sched_metrics_ue_configurator
 {
+
+  srslog::basic_logger& logger = srslog::fetch_basic_logger("CELL_METRICS_HANDLER");
+
+
   using msecs = std::chrono::milliseconds;
   using usecs = std::chrono::microseconds;
 

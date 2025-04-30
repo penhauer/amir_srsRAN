@@ -29,6 +29,7 @@
 #include "../uci_scheduling/uci_scheduler.h"
 #include "ue_repository.h"
 #include "srsran/scheduler/config/scheduler_expert_config.h"
+#include "srsran/srslog/logger.h"
 
 namespace srsran {
 
@@ -36,7 +37,10 @@ namespace srsran {
 /// methods to fetch the current gNB resource grid DL and UL states.
 class ue_cell_grid_allocator
 {
+
 public:
+
+
   ue_cell_grid_allocator(const scheduler_ue_expert_config& expert_cfg_,
                          ue_repository&                    ues_,
                          srslog::basic_logger&             logger_);
