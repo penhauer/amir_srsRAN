@@ -48,7 +48,7 @@ bool ue_channel_state_manager::handle_csi_report(const csi_report_data& csi_repo
   if (csi_report.first_tb_wideband_cqi.has_value()) {
     wideband_cqi = csi_report.first_tb_wideband_cqi.value();
 
-    wideband_cqi = 5;
+    // wideband_cqi = 5;
     logger.debug("amir CSI report: wideband_cqi = {}", wideband_cqi);
   }
 

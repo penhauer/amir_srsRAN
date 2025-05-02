@@ -364,7 +364,7 @@ alloc_result ue_cell_grid_allocator::allocate_dl_grant(const ue_pdsch_grant& gra
       mcs_tbs_info = compute_dl_mcs_tbs(pdsch_cfg, adjusted_mcs, crbs.length(), contains_dc);
 
       logger.info("amir ue={} rnti={} PDSCH allocation. Cause: New Tx. MCS={} RBs={}", u.ue_index, u.crnti, mcs_prbs.mcs, mcs_prbs.n_prbs);
-      logger.info("amir mcs={}, tbs={}", mcs_tbs_info.value().mcs, mcs_tbs_info.value().tbs);
+      logger.info("amir mcs={}, tbs={}, bytes={}", mcs_tbs_info.value().mcs, mcs_tbs_info.value().tbs, grant.recommended_nof_bytes.value());
       logger.info("amir recommended_nof_bytes={}", grant.recommended_nof_bytes.value());
 
     } else {

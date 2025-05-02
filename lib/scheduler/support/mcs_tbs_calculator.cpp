@@ -33,6 +33,9 @@ using namespace srsran;
 
 static constexpr unsigned NOF_BITS_PER_BYTE = 8U;
 
+
+srslog::basic_logger&  mcs_tbs_calculator_logger = srslog::fetch_basic_logger("srsran.scheduler.mcs_tbs_calculator");
+
 // Helper that generates the ulsch_configuration object necessary to compute the Effective Code Rate.
 static ulsch_configuration build_ulsch_info(const pusch_config_params&   pusch_cfg,
                                             const ue_cell_configuration* ue_cell_cfg,
@@ -231,6 +234,8 @@ std::optional<sch_mcs_tbs> srsran::compute_dl_mcs_tbs(const pdsch_config_params&
   }
 
   const unsigned tbs_bytes = tbs_bits / NOF_BITS_PER_BYTE;
+  mcs_tbs_calculator_logger.info("tbs_bytes = {}, effective_code_rate = {}, mcs = {}, nof_prbs = {}", 
+    tbs_bytes, effective_code_rate, mcs.to_uint(), nof_prbs);
   return std::optional<sch_mcs_tbs>{sch_mcs_tbs{.mcs = mcs, .tbs = tbs_bytes}};
 }
 
