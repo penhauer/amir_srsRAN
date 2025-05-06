@@ -25,12 +25,12 @@
 #include "srsran/adt/optional.h"
 #include "srsran/ran/sch/sch_mcs.h"
 #include "srsran/scheduler/scheduler_slot_handler.h"
-#include "srsran/srslog/logger.h"
+#include "srsran/srslog/srslog.h"
 
 namespace srsran {
 
 
-  srslog::basic_logger&  mcs_tbs_calculator_logger = srslog::get_logger("srsran.scheduler.mcs_tbs_calculator");
+  // srslog::basic_logger&  mcs_tbs_calculator_logger = srslog::fetch_basic_logger("srsran.scheduler.mcs_tbs_calculator");
 
 struct pusch_config_params;
 struct pdsch_config_params;
