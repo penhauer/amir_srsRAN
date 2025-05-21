@@ -1,0 +1,71 @@
+cu_cp:
+
+  # f1ap:
+  #   bind_addr: 127.0.13.1
+  #   procedure_timeout: 1000
+
+  amf:
+    addr: 10.10.3.200
+    port: 38412
+    bind_addr: 10.10.3.231
+    sctp_nodelay: true
+
+    sctp_rto_initial: 120
+    sctp_rto_min: 120
+    sctp_rto_max: 500
+    no_core: false
+
+    supported_tracking_areas:
+      - tac: 1
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
+                sd: 000001
+              - sst: 2
+                sd: 000002
+
+
+cu_up:
+
+  # upf:
+  #   bind_addr: 0.0.0.0
+  #   # bind_interface: auto                  # Optional TEXT (auto). Sets network device to bind for N3 interface. Format: IPV4 or IPV6 IP address.
+  #   ext_addr: auto                        # Optional TEXT (auto). Sets external IP address that is advertised to receive GTP-U packets from UPF via N3 interface. Format: IPV4 or IPV6 IP address.
+  #   udp_max_rx_msgs: 256                  # Optional INT (256). Sets the maximum amount of messages RX in a single syscall.
+  #   pool_threshold: 0.9                   # Optional FLOAT (0.9). Sets the pool accupancy threshold after which packets are dropped. Supported: [0.0 - 1.0].
+  #   no_core: false                        # Optional BOOLEAN (false). Setting to true allows the gNB to run without a core. Supported: [0, 1].
+
+  # nru:                             
+  #   bind_addr: 127.0.13.1
+  #   # ext_addr:
+
+
+log:
+  filename: /tmp/cu.log
+  all_level: warning                    
+
+
+pcap:
+  e2ap_filename: /tmp/gnb_e2ap.pcap    
+  e2ap_enable: false                   
+
+  ngap_filename: /tmp/gnb_ngap.pcap    
+  ngap_enable: false                   
+
+  f1ap_filename: /tmp/cu_f1ap.pcap    
+  f1ap_enable: true
+
+  n3_filename: /tmp/gnb_n3.pcap        
+  n3_enable: false                     
+
+  f1u_filename: /tmp/cu_f1u.pcap      
+  f1u_enable: true
+
+  e1ap_filename: /tmp/gnb_e1ap.pcap    
+  e1ap_enable: false                   
+
+metrics:
+  cu_cp_statistics_report_period: 1
+  cu_up_statistics_report_period: 1
+  pdcp_report_period: 0

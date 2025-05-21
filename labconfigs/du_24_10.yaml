@@ -1,0 +1,74 @@
+f1ap:
+  cu_cp_addr: 127.0.10.1
+  # bind_addr: 127.0.13.2
+
+# nru:
+#   bind_addr: 127.0.13.2
+
+ru_sdr:
+  device_driver: uhd
+  device_args: type=x300,product=X310,master_clock_rate=184.32e6,dboard_clck_rate=92.16e6,send_frame_size=8000,recv_frame_size=8000
+  clock: internal
+  sync: internal
+  srate: 46.08
+  freq_offset: 0
+  clock_ppm: 0
+  lo_offset: 0
+  tx_gain: 31.5
+  rx_gain: 20
+  time_alignment_calibration: auto
+
+
+cell_cfg:
+  dl_arfcn: 627340
+  band: 78
+  channel_bandwidth_MHz: 40
+  common_scs: 30
+  plmn: "00101"
+  tac: 1
+  pci: 1
+  # slicing:                              
+  # -
+  #   sst: 1                                  
+  #   sd: 000001                         
+  #   sched_cfg:                        
+  #     min_prb_policy_ratio: 0        
+  #     max_prb_policy_ratio: 20      
+  # -
+  #   sst: 2
+  #   sd: 000002                   
+  #   sched_cfg:
+  #     min_prb_policy_ratio: 80
+  #     max_prb_policy_ratio: 100
+
+
+log: 
+  filename: /tmp/du.log
+  all_level: warning                    
+
+pcap: 
+  e2ap_filename: /tmp/gnb_e2ap.pcap    
+  e2ap_enable: false                   
+
+  f1ap_filename: /tmp/du_f1ap.pcap    
+  f1ap_enable: true
+
+  f1u_filename: /tmp/du_f1u.pcap      
+  f1u_enable: true
+
+  rlc_filename: /tmp/gnb_rlc.pcap      
+  rlc_rb_type: all                     
+  rlc_enable: false                    
+  mac_filename: /tmp/gnb_mac.pcap      
+  mac_type: udp                        
+  mac_enable: false                    
+
+
+metrics: 
+  addr: 127.0.0.1
+  port: 55555
+  rlc_report_period: 1000
+  rlc_json_enable: false
+  enable_json_metrics: false
+  autostart_stdout_metrics: false
+

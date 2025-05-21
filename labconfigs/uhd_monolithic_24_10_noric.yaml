@@ -1,0 +1,104 @@
+# This example configuration outlines how to configure the srsRAN Project gNB to create a single FDD cell
+# transmitting in band 3, with 20 MHz bandwidth and 30 kHz sub-carrier-spacing. A USRP N3XX is configured
+# as the RF frontend using split 8. Note in this example the internal GPDSO of the N310 is used.
+
+# gnb_du_id: 0
+
+cu_cp:
+  amf:
+    addr: 10.10.3.200
+    port: 38412
+    # bind_addr: 129.97.168.82
+    bind_addr: 10.10.3.231
+    sctp_nodelay: true
+
+    sctp_rto_initial: 120
+    sctp_rto_min: 120
+    sctp_rto_max: 500
+    no_core: false
+
+    supported_tracking_areas:
+      - tac: 1
+        plmn_list:
+          - plmn: "00101"
+            tai_slice_support_list:
+              - sst: 1
+                sd: 000001
+              - sst: 2
+                sd: 000002
+  
+
+
+ru_sdr:
+  device_driver: uhd
+  device_args: type=x300,product=X310,master_clock_rate=184.32e6,dboard_clck_rate=92.16e6,send_frame_size=8000,recv_frame_size=8000
+  clock: internal
+  sync: internal
+  srate: 46.08
+  freq_offset: 0
+  clock_ppm: 0
+  lo_offset: 0
+  tx_gain: 31.5
+  rx_gain: 20
+  time_alignment_calibration: auto
+
+
+cell_cfg:
+  dl_arfcn: 627340
+  band: 78
+  channel_bandwidth_MHz: 40
+  common_scs: 30
+  plmn: "00101"
+  tac: 1
+  pci: 1
+  # slicing:                              
+  # -
+  #   sst: 1                                  
+  #   sd: 000001                         
+  #   sched_cfg:                        
+  #     min_prb_policy_ratio: 0        
+  #     max_prb_policy_ratio: 20      
+  # -
+  #   sst: 2
+  #   sd: 000002                   
+  #   sched_cfg:
+  #     min_prb_policy_ratio: 80
+  #     max_prb_policy_ratio: 100
+
+
+
+  pdsch:
+    olla_cqi_inc_step: 0.001
+    olla_target_bler: 0.1
+    olla_max_cqi_offset: 4
+
+
+  tdd_ul_dl_cfg:
+    dl_ul_tx_period: 10
+    nof_dl_slots: 6
+    nof_dl_symbols: 0
+    nof_ul_slots: 2
+    nof_ul_symbols: 0
+
+
+log:
+  filename: /tmp/gnb.log
+  # all_level: info
+  all_level: warning
+
+
+pcap:
+  mac_enable: false
+  mac_filename: /tmp/gnb_mac.pcap
+  ngap_enable: false
+  ngap_filename: /tmp/gnb_ngap.pcap
+
+  e2ap_enable: false                    # Optional BOOLEAN (false). Enable/disable E2AP packet capture. Supported: [false, true].
+  e2ap_filename: /tmp/gnb_e2ap.pcap     # Optional TEXT (/tmp/gnb_e2ap.pcap). Path for E2AP PCAPs.
+
+
+metrics:
+  addr: 127.0.0.1
+  port: 55555
+  rlc_json_enable: 1
+  rlc_report_period: 1000
