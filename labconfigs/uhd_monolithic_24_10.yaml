@@ -37,8 +37,8 @@ ru_sdr:
   freq_offset: 0
   clock_ppm: 0
   lo_offset: 0
-  # tx_gain: 31.5
-  tx_gain: 20
+  tx_gain: 31.5
+  # tx_gain: 20
   rx_gain: 20
   time_alignment_calibration: auto
 

@@ -106,7 +106,6 @@ float ue_link_adaptation_controller::get_effective_cqi() const
     // Ensure CQI remains within [1, 15].
     eff_cqi = std::min(std::max(1.0F, eff_cqi), static_cast<float>(cqi_value::max()));
   }
-  logger.debug("amir ue_link_adaptation_controller::get_effective_cqi eff_cqi = {}", eff_cqi);
   return eff_cqi;
 }
 
@@ -117,7 +116,6 @@ float ue_link_adaptation_controller::get_effective_snr() const
 
 std::optional<sch_mcs_index> ue_link_adaptation_controller::calculate_dl_mcs(pdsch_mcs_table mcs_table) const
 {
-  logger.debug("ue_link_adaptation_controller::calculate_dl_mcs");
   if (cell_cfg.expert_cfg.ue.dl_mcs.length() == 0) {
     // Fixed MCS.
     return cell_cfg.expert_cfg.ue.dl_mcs.start();

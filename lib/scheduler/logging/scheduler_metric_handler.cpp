@@ -22,7 +22,9 @@
 
 #include "../config/cell_configuration.h"
 #include "scheduler_metrics_handler.h"
+#include "srsran/ran/slot_point.h"
 #include "srsran/scheduler/scheduler_configurator.h"
+#include "srsran/scheduler/scheduler_metrics.h"
 #include "srsran/srslog/srslog.h"
 
 using namespace srsran;
@@ -96,17 +98,17 @@ void cell_metrics_handler::handle_crc_indication(const ul_crc_pdu_indication& cr
 
 void cell_metrics_handler::handle_pucch_sinr(ue_metric_context& u, float sinr)
 {
-  logger.debug("Received PUCCH SINR report for UE {}, SINR: {}", u.ue_index, sinr);
+  // logger.debug("Received PUCCH SINR report for UE {}, SINR: {}", u.ue_index, sinr);
   u.data.nof_pucch_snr_reports++;
   u.data.sum_pucch_snrs += sinr;
 }
 
 void cell_metrics_handler::handle_csi_report(ue_metric_context& u, const csi_report_data& csi)
 {
-  logger.debug("Received CSI report for UE {}", u.ue_index);
-  logger.debug("CSI Report Details: first_tb_wideband_cqi={}, ri={}",
-         csi.first_tb_wideband_cqi.has_value() ? csi.first_tb_wideband_cqi->to_uint() : -1,
-         csi.ri.has_value() ? csi.ri->to_uint() : -1);
+  // logger.debug("Received CSI report for UE {}", u.ue_index);
+  // logger.debug("CSI Report Details: first_tb_wideband_cqi={}, ri={}",
+  //        csi.first_tb_wideband_cqi.has_value() ? csi.first_tb_wideband_cqi->to_uint() : -1,
+  //        csi.ri.has_value() ? csi.ri->to_uint() : -1);
         //  csi.pmi.has_value() ? csi.pmi->to_string() : "N/A",
         //  csi.cqi_table.has_value() ? csi.cqi_table->to_string() : "N/A",
         //  csi.wideband_sinr.has_value() ? csi.wideband_sinr.value() : -std::numeric_limits<float>::infinity());
@@ -122,7 +124,7 @@ void cell_metrics_handler::handle_csi_report(ue_metric_context& u, const csi_rep
   }
 }
 
-void cell_metrics_handler::handle_dl_harq_ack(du_ue_index_t ue_index, bool ack, units::bytes tbs)
+void cell_metrics_handler::handle_dl_harq_ack(slot_point uci_sl, du_ue_index_t ue_index, bool ack, units::bytes tbs)
 {
   if (ues.contains(ue_index)) {
     auto& u = ues[ue_index];
@@ -225,7 +227,25 @@ void cell_metrics_handler::handle_error_indication()
   error_indication_counter++;
 }
 
-void cell_metrics_handler::report_metrics()
+
+void cell_metrics_handler::log_scheduler_ue_metrics(const scheduler_ue_metrics& metrics, slot_point slot_tx)
+{
+  logger.debug("slot: {} rnti: {} dl_mcs: {} dl_prbs: {} nof_dl_slots: {}, dl_harq_acks: {} dl_harq_nacks: {}, dl_bytes: {}, olla_offset: {}",
+    slot_tx.system_slot(),
+    metrics.rnti,
+    metrics.dl_mcs.to_uint(),
+    metrics.tot_dl_prbs_used,
+    nof_dl_slots,
+    metrics.dl_nof_ok,
+    metrics.dl_nof_nok,
+    metrics.dl_tbs_bytes, 
+    metrics.olla_offset
+  );
+
+}
+
+
+void cell_metrics_handler::report_metrics(slot_point sl_tx)
 {
   for (ue_metric_context& ue : ues) {
     // Compute statistics of the UE metrics and push the result to the report.
@@ -234,6 +254,12 @@ void cell_metrics_handler::report_metrics()
         nof_dl_slots > 0 ? static_cast<double>(1.0 * sched_ue_metrics.tot_dl_prbs_used / nof_dl_slots) : 0;
     sched_ue_metrics.mean_ul_prbs_used =
         nof_ul_slots > 0 ? static_cast<double>(1.0 * sched_ue_metrics.tot_ul_prbs_used / nof_ul_slots) : 0;
+      
+    log_scheduler_ue_metrics(
+      sched_ue_metrics,
+      sl_tx
+    );
+
     next_report.ue_metrics.push_back(sched_ue_metrics);
   }
 
@@ -261,12 +287,28 @@ void cell_metrics_handler::report_metrics()
   next_report.events.clear();
 }
 
-void cell_metrics_handler::handle_slot_result(const sched_result&       slot_result,
+void cell_metrics_handler::handle_slot_result(slot_point sl_tx, const sched_result&       slot_result,
                                               std::chrono::microseconds slot_decision_latency)
 {
   // Count only full DL/UL slots.
   bool full_dl_slot = (slot_result.dl.nof_dl_symbols == 14);
   bool full_ul_slot = (slot_result.ul.nof_ul_symbols == 14);
+
+
+  logger.debug("amir: sl: {}, sfi: {}, slot_result.dl.nof_dl_symbols: {}, slot_result.ul.nof_ul_symbols: {}",
+          sl_tx.system_slot(),
+          sl_tx.subframe_index(),
+         slot_result.dl.nof_dl_symbols,
+         slot_result.ul.nof_ul_symbols);
+
+  if (not full_dl_slot and not full_ul_slot) {
+    // logger.debug("amir: Partial slot detected. DL symbols: {}, UL symbols: {}, slot_counter: {}",
+    //        slot_result.dl.nof_dl_symbols,
+    //        slot_result.ul.nof_ul_symbols,
+    //        slot_counter
+    //       );
+    // return;
+  }
 
   for (const dl_msg_alloc& dl_grant : slot_result.dl.ue_grants) {
     auto it = rnti_to_ue_index_lookup.find(dl_grant.pdsch_cfg.rnti);
@@ -279,6 +321,13 @@ void cell_metrics_handler::handle_slot_result(const sched_result&       slot_res
       u.data.dl_mcs += cw.mcs_index.to_uint();
       u.data.nof_dl_cws++;
     }
+
+    if (dl_grant.context.olla_offset.has_value()) {
+      u.data.olla_offset += dl_grant.context.olla_offset.value();
+      u.data.olla_counter += 1;
+    }
+    
+
     if (dl_grant.pdsch_cfg.rbs.is_type0()) {
       u.data.tot_dl_prbs_used += full_dl_slot ? convert_rbgs_to_prbs(dl_grant.pdsch_cfg.rbs.type0(),
                                                                      {0, cell_cfg.nof_dl_prbs},
@@ -336,15 +385,22 @@ void cell_metrics_handler::push_result(slot_point                sl_tx,
     // The SCS common is now known.
     usecs slot_dur      = usecs{1000U >> sl_tx.numerology()};
     report_period_slots = usecs{report_period} / slot_dur;
+    logger.debug("amir: Report period slots: {}", report_period_slots);
+    logger.debug("amir: sl_tx_numerology: {}", sl_tx.numerology());
+    logger.debug("Report period: {} usecs, Slot duration: {} usecs", report_period.count(), slot_dur.count());
+
+    logger.debug("amir: subframe_slot_index: {}", sl_tx.subframe_slot_index());
+    logger.debug("amir: nof_slots_per_subframe: {}", sl_tx.nof_slots_per_subframe());
+    logger.debug("amir: nof_slots_per_system_frame: {}", sl_tx.nof_slots_per_system_frame());
   }
 
   last_slot_tx = sl_tx;
 
-  handle_slot_result(slot_result, slot_decision_latency);
+  handle_slot_result(sl_tx, slot_result, slot_decision_latency);
 
   ++slot_counter;
   if (slot_counter >= report_period_slots) {
-    report_metrics();
+    report_metrics(sl_tx);
     slot_counter = 0;
   }
 }
@@ -363,6 +419,10 @@ cell_metrics_handler::ue_metric_context::compute_report(std::chrono::millisecond
   ret.ul_mcs           = sch_mcs_index{mcs};
   ret.tot_dl_prbs_used = data.tot_dl_prbs_used;
   ret.tot_ul_prbs_used = data.tot_ul_prbs_used;
+  ret.dl_tbs_bytes      = data.sum_dl_tb_bytes;
+
+  ret.olla_offset      = data.olla_counter > 0 ? data.olla_offset / data.olla_counter : -1;
+
   ret.dl_brate_kbps    = static_cast<double>(data.sum_dl_tb_bytes * 8U) / metric_report_period.count();
   ret.ul_brate_kbps    = static_cast<double>(data.sum_ul_tb_bytes * 8U) / metric_report_period.count();
   ret.dl_nof_ok        = data.count_uci_harq_acks;

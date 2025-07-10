@@ -50,7 +50,6 @@ public:
   float get_pusch_snr() const { return pusch_snr_db; }
 
   csi_report_wideband_cqi_type get_wideband_cqi() const { 
-    logger.debug("amir CSI report: wideband_cqi = {}", wideband_cqi);
     return wideband_cqi; 
   }
 

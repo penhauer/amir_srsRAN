@@ -34,7 +34,7 @@ ru_sdr:
   device_args: type=x300,product=X310,master_clock_rate=184.32e6,dboard_clck_rate=92.16e6,send_frame_size=8000,recv_frame_size=8000
   clock: internal
   sync: internal
-  srate: 46.08
+  srate: 92.16
   freq_offset: 0
   clock_ppm: 0
   lo_offset: 0

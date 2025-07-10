@@ -680,7 +680,7 @@ struct du_high_unit_metrics_config {
   } rlc;
   bool enable_json_metrics = false;
   /// Scheduler report period in milliseconds.
-  unsigned sched_report_period      = 1000;
+  unsigned sched_report_period      = 1;
   bool     autostart_stdout_metrics = false;
 };
 

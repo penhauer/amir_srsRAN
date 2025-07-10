@@ -101,7 +101,7 @@ struct scheduler_ue_expert_config {
   /// CQI offset increment used in outer loop link adaptation (OLLA) algorithm. If set to zero, OLLA is disabled.
   float olla_cqi_inc{0.001};
   /// DL Target BLER to be achieved with OLLA.
-  float olla_dl_target_bler{0.01};
+  float olla_dl_target_bler{0.001};
   /// Maximum CQI offset that the OLLA algorithm can apply to the reported CQI.
   float olla_max_cqi_offset{4.0};
   /// UL SNR offset increment in dB used in OLLA algorithm. If set to zero, OLLA is disabled.

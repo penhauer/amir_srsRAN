@@ -432,7 +432,7 @@ void ue_event_manager::handle_harq_ind(ue_cell&                               ue
       // In case the HARQ process is not waiting for more HARQ-ACK bits. Notify metrics handler with HARQ outcome.
       if (result->update == dl_harq_process_handle::status_update::acked or
           result->update == dl_harq_process_handle::status_update::nacked) {
-        du_cells[ue_cc.cell_index].metrics->handle_dl_harq_ack(
+        du_cells[ue_cc.cell_index].metrics->handle_dl_harq_ack(uci_sl,
             ue_cc.ue_index, result->update == dl_harq_process_handle::status_update::acked, tbs);
       }
     }

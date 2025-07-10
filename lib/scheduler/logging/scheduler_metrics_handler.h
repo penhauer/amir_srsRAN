@@ -23,6 +23,7 @@
 #pragma once
 
 #include "scheduler_metrics_ue_configurator.h"
+#include "srsran/ran/slot_point.h"
 #include "srsran/scheduler/scheduler_dl_buffer_state_indication_handler.h"
 #include "srsran/scheduler/scheduler_feedback_handler.h"
 #include "srsran/scheduler/scheduler_metrics.h"
@@ -56,6 +57,10 @@ class cell_metrics_handler final : public sched_metrics_ue_configurator
       unsigned nof_dl_cws             = 0;
       unsigned ul_mcs                 = 0;
       unsigned nof_puschs             = 0;
+
+      double olla_offset               = 0;
+      unsigned olla_counter = 0;
+
       uint64_t sum_dl_tb_bytes        = 0;
       uint64_t sum_ul_tb_bytes        = 0;
       double   sum_pusch_snrs         = 0;
@@ -142,7 +147,7 @@ public:
   void handle_crc_indication(const ul_crc_pdu_indication& crc_pdu, units::bytes tbs);
 
   /// \brief Register HARQ-ACK UCI indication.
-  void handle_dl_harq_ack(du_ue_index_t ue_index, bool ack, units::bytes tbs);
+  void handle_dl_harq_ack(slot_point uci_sl, du_ue_index_t ue_index, bool ack, units::bytes tbs);
 
   /// \brief Register HARQ timeout.
   void handle_harq_timeout(du_ue_index_t ue_index, bool is_dl);
@@ -171,10 +176,13 @@ public:
   bool connected() const { return report_period != std::chrono::nanoseconds{0}; }
 
 private:
+
+  void log_scheduler_ue_metrics(const scheduler_ue_metrics& metrics, slot_point slot_tx);
+
   void handle_pucch_sinr(ue_metric_context& u, float sinr);
   void handle_csi_report(ue_metric_context& u, const csi_report_data& csi);
-  void report_metrics();
-  void handle_slot_result(const sched_result& slot_result, std::chrono::microseconds slot_decision_latency);
+  void report_metrics(slot_point sl_tx);
+  void handle_slot_result(slot_point sl_tx, const sched_result& slot_result, std::chrono::microseconds slot_decision_latency);
 };
 
 /// Handler of metrics for all the UEs and cells of the scheduler.

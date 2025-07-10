@@ -43,6 +43,9 @@ struct scheduler_ue_metrics {
   double                       dl_brate_kbps;
   unsigned                     dl_nof_ok;
   unsigned                     dl_nof_nok;
+  unsigned                     dl_tbs_bytes;
+  double                       olla_offset;
+
   float                        pusch_snr_db;
   float                        pusch_rsrp_db;
   float                        pucch_snr_db;
